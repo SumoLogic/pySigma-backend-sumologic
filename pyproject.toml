@@ -1,0 +1,24 @@
+[tool.poetry]
+name = "pysigma-backend-sumologic"
+version = "0.1.0"
+description = "pySigma Sumo Logic backend"
+authors = ["Dinesh Meka <dinesh.meka@sumologic.com>"]
+license = "LGPL-3.0-only"
+repository = "https://github.com/SumoLogic/pySigma-backend-sumologic"
+packages = [
+    { include = "sigma" }
+]
+
+[tool.poetry.dependencies]
+python = "^3.10"
+pysigma = "^0.11.0"
+defusedxml = "^0.7.1"
+
+[tool.poetry.group.dev.dependencies]
+pytest = "^8.0"
+pytest-cov = "^4.0"
+coverage = "^7.0"
+
+[build-system]
+requires = ["poetry-core>=1.8.1"]
+build-backend = "poetry.core.masonry.api"
