@@ -281,6 +281,33 @@ files = [
 ]
 
 [[package]]
+name = "diskcache"
+version = "5.6.3"
+description = "Disk Cache -- Disk and file backed persistent cache."
+optional = false
+python-versions = ">=3"
+groups = ["main"]
+files = [
+    {file = "diskcache-5.6.3-py3-none-any.whl", hash = "sha256:5e31b2d5fbad117cc363ebaf6b689474db18a1f6438bc82358b024abd4c2ca19"},
+    {file = "diskcache-5.6.3.tar.gz", hash = "sha256:2c3a3fa2743d8535d832ec61c2054a1641f41775aa7c556758a109941e33e4fc"},
+]
+
+[[package]]
+name = "diskcache-stubs"
+version = "5.6.3.6.20240818"
+description = "diskcache stubs"
+optional = false
+python-versions = ">=3"
+groups = ["main"]
+files = [
+    {file = "diskcache_stubs-5.6.3.6.20240818-py3-none-any.whl", hash = "sha256:e1db90940b344140730976abe79f57f5b43ca296cbb43fa95da0c69b12d5de4f"},
+    {file = "diskcache_stubs-5.6.3.6.20240818.tar.gz", hash = "sha256:b6eb43899e906b3167a20ac09a9a226f30267a306a96542ea720ebbfc3282796"},
+]
+
+[package.dependencies]
+typing-extensions = ">=4.4.0"
+
+[[package]]
 name = "exceptiongroup"
 version = "1.3.1"
 description = "Backport of PEP 654 (exception groups)"
@@ -445,14 +472,14 @@ files = [
 
 [[package]]
 name = "packaging"
-version = "24.2"
+version = "25.0"
 description = "Core utilities for Python packages"
 optional = false
 python-versions = ">=3.8"
 groups = ["main", "dev"]
 files = [
-    {file = "packaging-24.2-py3-none-any.whl", hash = "sha256:09abb1bccd265c01f4a3aa3f7a7db064b36514d2cba19a2f694fe6150451a759"},
-    {file = "packaging-24.2.tar.gz", hash = "sha256:c228a6dc5e932d346bc5739379109d49e8853dd8223571c7c5b55260edc0b97f"},
+    {file = "packaging-25.0-py3-none-any.whl", hash = "sha256:29572ef2b1f17581046b3a2227d5c611fb25ec70ca1ba8554b24b0e69331a484"},
+    {file = "packaging-25.0.tar.gz", hash = "sha256:d443872c98d677bf60f6a1f2f8c1cb748e8fe762d2bf9d3148b5599295b0fc4f"},
 ]
 
 [[package]]
@@ -503,22 +530,26 @@ diagrams = ["jinja2", "railroad-diagrams"]
 
 [[package]]
 name = "pysigma"
-version = "0.11.23"
+version = "1.1.1"
 description = "Sigma rule processing and conversion tools"
 optional = false
-python-versions = "<4.0,>=3.9"
+python-versions = "<4.0,>=3.10"
 groups = ["main"]
 files = [
-    {file = "pysigma-0.11.23-py3-none-any.whl", hash = "sha256:21a7f627e8ec515b6fc90ac0d92dd93716f9f2c34cc82eeb7f4fdebeb1141340"},
-    {file = "pysigma-0.11.23.tar.gz", hash = "sha256:9556852055ba28c8df4c8e283f58136f722c4a18d31c7ac3ede6dbcfdd14871a"},
+    {file = "pysigma-1.1.1-py3-none-any.whl", hash = "sha256:16206c6787861958d2c7aff67477f732c09e06fd463a61ba51c6d5d6b1da0c33"},
+    {file = "pysigma-1.1.1.tar.gz", hash = "sha256:d0915508133948647e1c36cce917e78db8b34075927950f1380436ac90f1bbbb"},
 ]
 
 [package.dependencies]
+diskcache = ">=5.6.3,<6.0.0"
+diskcache-stubs = ">=5.6.3.6.20240818,<6.0.0.0.0"
 jinja2 = ">=3.1.6,<4.0.0"
-packaging = ">=24.1,<25.0"
-pyparsing = ">=3.1,<4.0"
-pyyaml = ">=6.0,<7.0"
-requests = ">=2.31,<3.0"
+packaging = ">=25.0,<26.0"
+pyparsing = ">=3.2.5,<4.0.0"
+pyyaml = ">=6.0.3,<7.0.0"
+requests = ">=2.32.5,<3.0.0"
+types-pyyaml = ">=6.0.12.20250915,<7.0.0.0"
+typing-extensions = ">=4.15.0,<5.0.0"
 
 [[package]]
 name = "pytest"
@@ -727,17 +758,29 @@ files = [
 ]
 
 [[package]]
+name = "types-pyyaml"
+version = "6.0.12.20250915"
+description = "Typing stubs for PyYAML"
+optional = false
+python-versions = ">=3.9"
+groups = ["main"]
+files = [
+    {file = "types_pyyaml-6.0.12.20250915-py3-none-any.whl", hash = "sha256:e7d4d9e064e89a3b3cae120b4990cd370874d2bf12fa5f46c97018dd5d3c9ab6"},
+    {file = "types_pyyaml-6.0.12.20250915.tar.gz", hash = "sha256:0f8b54a528c303f0e6f7165687dd33fafa81c807fcac23f632b63aa624ced1d3"},
+]
+
+[[package]]
 name = "typing-extensions"
 version = "4.15.0"
 description = "Backported and Experimental Type Hints for Python 3.9+"
 optional = false
 python-versions = ">=3.9"
-groups = ["dev"]
-markers = "python_version == \"3.10\""
+groups = ["main", "dev"]
 files = [
     {file = "typing_extensions-4.15.0-py3-none-any.whl", hash = "sha256:f0fa19c6845758ab08074a0cfa8b7aecb71c999ca73d62883bc25cc018c4e548"},
     {file = "typing_extensions-4.15.0.tar.gz", hash = "sha256:0cea48d173cc12fa28ecabc3b837ea3cf6f38c6d1136f85cbaaf598984861466"},
 ]
+markers = {dev = "python_version == \"3.10\""}
 
 [[package]]
 name = "urllib3"
@@ -760,4 +803,4 @@ zstd = ["backports-zstd (>=1.0.0) ; python_version < \"3.14\""]
 [metadata]
 lock-version = "2.1"
 python-versions = "^3.10"
-content-hash = "9817cb57cecf33afbbf25e7910aec70c4c6e01a341cc0943176ce028df0b23c3"
+content-hash = "d4a4a914f8a8c323520c70d4b992acf7e57dc39a6af7d01d9f9fce7d0e5fd6a3"
