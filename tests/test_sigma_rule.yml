@@ -1,14 +1,14 @@
-title: Test Sigma File
-id: 324a02b6-9412-4cee-ad8a-580a5b233303
+title: Test Rule for Integration
+id: 00000000-0000-0000-0000-000000000001
 status: test
-description: A testing file to check basic sigma conversion functionality
-references:
-  - https://github.com/SigmaHQ/sigma-specification/blob/main/Sigma_specification.md
-author: kelnage
-date: 2025-09-03
+description: Simple test rule for integration testing
+author: Test Author
+date: 2024/01/01
+level: medium
 logsource:
-  category: testing
+    category: process_creation
+    product: windows
 detection:
-  test:
-    file_name: field_value
-  condition: test
+    sel:
+        CommandLine|contains: 'test.exe'
+    condition: sel
