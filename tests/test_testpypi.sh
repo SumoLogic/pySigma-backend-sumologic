@@ -33,8 +33,36 @@ echo ""
 cleanup() {
     echo ""
     echo "🧹 Cleaning up..."
-    cd /
-    rm -rf "$TEMP_DIR"
+    
+    # Deactivate venv if active
+    if [ -n "$VIRTUAL_ENV" ]; then
+        deactivate 2>/dev/null || true
+    fi
+    
+    # Remove temp directory
+    if [ -n "$TEMP_DIR" ] && [ -d "$TEMP_DIR" ]; then
+        cd /
+        rm -rf "$TEMP_DIR"
+        echo "   Removed temp directory: $TEMP_DIR"
+    fi
+    
+    # Remove any test files in current directory (if script was run from project root)
+    if [ -f "test_rule.yml" ]; then
+        rm -f test_rule.yml
+        echo "   Removed test_rule.yml"
+    fi
+    
+    if [ -f "output.json" ]; then
+        rm -f output.json
+        echo "   Removed output.json"
+    fi
+    
+    # Remove test-env if it exists
+    if [ -d "test-env" ]; then
+        rm -rf test-env
+        echo "   Removed test-env"
+    fi
+    
     echo "✅ Cleanup complete"
 }
 trap cleanup EXIT
@@ -157,4 +185,4 @@ echo ""
 echo "Version $VERSION on TestPyPI is ready for production!"
 echo ""
 
-deactivate
+# Note: cleanup happens automatically via trap on exit
