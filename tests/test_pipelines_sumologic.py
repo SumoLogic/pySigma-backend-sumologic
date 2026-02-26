@@ -10,8 +10,8 @@ def test_sumologic_cse_pipeline_initialization():
 
     assert pipeline is not None
     assert pipeline.name == "Sumo Logic Cloud SIEM (CSE) Pipeline"
-    assert "sumologic-cse" in pipeline.allowed_backends
-    assert "sumologic-cse-rule" in pipeline.allowed_backends
+    assert "sumo_logic_cse" in pipeline.allowed_backends
+    assert "sumo_logic_cse_rule" in pipeline.allowed_backends
     assert pipeline.priority == 20
 
 
