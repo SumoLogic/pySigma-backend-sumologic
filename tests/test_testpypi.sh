@@ -146,7 +146,7 @@ echo "   Created test rule: test_rule.yml"
 echo ""
 
 echo "   Converting with backend..."
-sigma convert -t sumologic-cse-rule -p sumologic_cse test_rule.yml > output.json
+sigma convert -t sumo_logic_cse_rule -p sumologic_cse test_rule.yml > output.json
 
 if [ $? -ne 0 ]; then
     echo "❌ FAIL: Conversion failed"

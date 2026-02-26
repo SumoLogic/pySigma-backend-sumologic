@@ -75,10 +75,10 @@ pip install .
 
 ```bash
 # Convert to CSE query
-sigma convert -t sumologic-cse -p sumologic_cse rule.yml
+sigma convert -t sumo_logic_cse -p sumologic_cse rule.yml
 
 # Convert to full CSE rule JSON
-sigma convert -t sumologic-cse-rule -p sumologic_cse rule.yml
+sigma convert -t sumo_logic_cse_rule -p sumologic_cse rule.yml
 ```
 
 ### As Python Library
