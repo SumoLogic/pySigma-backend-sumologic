@@ -19,16 +19,16 @@ This project uses **GitHub Actions with Trusted Publishers (OIDC)** for automate
 
 ### Publishing Summary
 
-| Environment | Purpose | Required? | When |
-|-------------|---------|-----------|------|
-| **TestPyPI** | Pre-release testing | Optional (recommended) | Before production release |
-| **Production PyPI** | Public release | **Required** | After TestPyPI validation |
-| **Plugin Directory** | Sigma-cli integration | Optional (recommended) | After production PyPI release |
+| Environment | Purpose | Required? | When | Branch Requirement |
+|-------------|---------|-----------|------|--------------------|
+| **TestPyPI** | Pre-release testing | Optional (recommended) | Before production release | Any branch (feature/dev branches OK) |
+| **Production PyPI** | Public release | **Required** | After TestPyPI validation | Must be merged to `main` |
+| **Plugin Directory** | Sigma-cli integration | Optional (recommended) | After production PyPI release | N/A (PR to external repo) |
 
 **Key Points:**
-- ✅ **TestPyPI** - Optional but recommended for testing before production
-- ✅ **Production PyPI** - Required for public use
-- ✅ **Plugin Directory** - Optional but recommended for community discovery and `sigma plugin install` support
+- ✅ **TestPyPI** - Can test from ANY branch (no need to merge to `main` first)
+- ✅ **Production PyPI** - Requires code merged to `main` branch
+- ✅ **Plugin Directory** - Optional but recommended for community discovery
 - ✅ Users can install via `pip` without plugin directory registration
 
 ---
@@ -82,43 +82,70 @@ For the initial release of a new backend, follow this complete end-to-end workfl
 
 **Purpose:** Test the package in a safe environment before production release.
 
+**Important:** You can test from ANY branch (doesn't need to be `main`)
+
 ```bash
-# 1. Verify version is correct
+# 1. Ensure your branch has all changes committed
+git status  # Should show "nothing to commit, working tree clean"
+
+# 2. Verify version is correct
 poetry version  # Should show 0.1.0
 
-# 2. Create and push version tag
+# 3. Create and push version tag FROM YOUR BRANCH
 git tag -a v0.1.0 -m "Release v0.1.0"
 git push origin v0.1.0
 ```
 
 **What happens automatically:**
-- ✅ GitHub Actions workflow triggers
+- ✅ GitHub Actions workflow triggers (from the tag, not the branch)
 - ✅ All tests run
 - ✅ Package builds
 - ✅ Publishes to TestPyPI
 
 **Monitor:** https://github.com/SumoLogic/pySigma-backend-sumologic/actions
 
-**Test the TestPyPI package:**
+**After ~5 minutes, test the TestPyPI package:**
+
+1. **Check TestPyPI** to verify package uploaded:
+   - Go to: https://test.pypi.org/project/pysigma-backend-sumologic/
+   - Verify version 0.1.0 appears
+
+2. **Install and test in clean environment:**
+
 ```bash
 # Create clean test environment
 python -m venv test-env
 source test-env/bin/activate  # On Windows: test-env\Scripts\activate
 
-# Install from TestPyPI
+# Install from TestPyPI (note: dependencies come from production PyPI)
 pip install --index-url https://test.pypi.org/simple/ \
             --extra-index-url https://pypi.org/simple/ \
             pysigma-backend-sumologic==0.1.0
 
-# Test basic import
-python -c "from sigma.backends.sumologic import SumoLogicBackend; print('✓ Backend imported successfully')"
+# Test 1: Import backend
+python -c "
+from sigma.backends.sumologic import SumoLogicCSEBackend, SumoLogicCSERuleBackend
+from sigma.pipelines.sumologic import sumologic_cse_pipeline
+print('✓ Backend imported successfully')
+"
 
-# Test conversion (if you have a test rule)
-# sigma convert -t sumologic-cse-rule -p sumologic_cse your_test_rule.yml
+# Test 2: Convert a simple rule (create test_rule.yml first)
+cat > test_rule.yml << 'EOF'
+title: Test Rule
+logsource:
+  category: process_creation
+  product: windows
+detection:
+  selection:
+    CommandLine|contains: 'test.exe'
+  condition: selection
+EOF
 
-# Cleanup
+sigma convert -t sumologic-cse-rule -p sumologic_cse test_rule.yml
+
+# If conversion works, you're good! Clean up:
 deactivate
-rm -rf test-env
+rm -rf test-env test_rule.yml
 ```
 
 **If issues found:** Fix them, delete the tag, and re-release to TestPyPI:
@@ -127,7 +154,8 @@ rm -rf test-env
 git tag -d v0.1.0
 git push origin :refs/tags/v0.1.0
 
-# Fix issues, commit, then re-tag
+# Fix issues in your branch, commit
+# Then re-tag
 git tag -a v0.1.0 -m "Release v0.1.0"
 git push origin v0.1.0
 ```
@@ -533,13 +561,14 @@ git push
 
 ### Before TestPyPI Release:
 - [ ] All tests pass: `poetry run pytest -vv`
-- [ ] Version set in `pyproject.toml`
-- [ ] Changes committed and pushed to `main`
+- [ ] Version set in `pyproject.toml` (e.g., `0.1.0`)
+- [ ] Changes committed in your branch (can be any branch, doesn't need to be `main`)
 - [ ] Trusted publishers configured on TestPyPI
 - [ ] GitHub environment `release` exists
 
 ### Before Production PyPI Release:
 - [ ] TestPyPI version tested successfully
+- [ ] Branch merged to `main` (required for production release)
 - [ ] Trusted publishers configured on production PyPI
 - [ ] Release notes prepared
 - [ ] README.md updated with usage instructions
