@@ -29,7 +29,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
     """
     return ProcessingPipeline(
         name="Sumo Logic Cloud SIEM (CSE) Pipeline",
-        allowed_backends=frozenset(["sumologic-cse", "sumologic-cse-rule"]),
+        allowed_backends=frozenset(["sumo_logic_cse", "sumo_logic_cse_rule"]),
         priority=20,
         items=[
             # Windows Process Creation (Sysmon Event ID 1, Security Event ID 4688)
