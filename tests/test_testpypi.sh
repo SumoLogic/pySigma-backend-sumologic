@@ -1,6 +1,20 @@
 #!/bin/bash
 # Test script for TestPyPI published version
 # This tests the package published to TestPyPI, not local code
+#
+# Usage:
+#   ./tests/test_testpypi.sh <version>
+#
+# Example:
+#   ./tests/test_testpypi.sh 0.1.0
+#
+# What it does:
+#   1. Creates clean virtual environment
+#   2. Installs package from TestPyPI
+#   3. Tests imports and functionality
+#   4. Validates Sigma rule conversion
+#   5. Cleans up all temporary files
+#
 set -e
 
 echo "=========================================="
