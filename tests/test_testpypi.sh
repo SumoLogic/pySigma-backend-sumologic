@@ -164,6 +164,7 @@ import sys
 
 with open('output.json') as f:
     data = json.load(f)
+    print(data)
     
 # Check required fields in CSE rule
 required_fields = ['name', 'expression', 'enabled']

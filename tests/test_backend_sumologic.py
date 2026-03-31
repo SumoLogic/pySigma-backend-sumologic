@@ -40,9 +40,12 @@ def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
     assert "expression" in json_result
     assert "score" in json_result
     assert json_result["score"] == 3  # medium severity = score 3
+    assert "prototype" in json_result
+    assert json_result["prototype"] is True  # test status = prototype True
+    assert "entity_selectors" in json_result
 
-    # Verify query contains AND logic (lowercase 'and' for CSE)
-    assert "and" in json_result["expression"]
+    # Verify query contains AND logic (uppercase 'AND' for CSE)
+    assert "AND" in json_result["expression"]
     assert "commandLine" in json_result["expression"]
     assert "baseImage" in json_result["expression"]
 
@@ -71,10 +74,10 @@ def test_sumologic_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
 
     json_result = json.loads(result[0])
 
-    # Verify OR logic (can be 'or' or 'in' operator for CSE)
-    assert "or" in json_result["expression"] or "in" in json_result["expression"]
+    # Verify OR logic (can be 'OR' or 'in' operator for CSE)
+    assert "OR" in json_result["expression"] or "in" in json_result["expression"]
     assert "commandLine" in json_result["expression"]
-    assert json_result["score"] == 4  # high severity = score 4
+    assert json_result["score"] == 6  # high severity = score 6
 
 
 def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
@@ -105,7 +108,7 @@ def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend)
     json_result = json.loads(result[0])
 
     # Should contain both AND and OR
-    assert json_result["score"] == 5  # critical severity = score 5
+    assert json_result["score"] == 8  # critical severity = score 8
     assert "commandLine" in json_result["expression"]
     assert "baseImage" in json_result["expression"]
 
@@ -136,8 +139,8 @@ def test_sumologic_or_and_expression(sumologic_backend: SumoLogicCSERuleBackend)
 
     json_result = json.loads(result[0])
 
-    assert json_result["score"] == 2  # low severity = score 2
-    assert "or" in json_result["expression"]
+    assert json_result["score"] == 1  # low severity = score 1
+    assert "OR" in json_result["expression"]
 
 
 def test_sumologic_in_expression(sumologic_backend: SumoLogicCSERuleBackend):
@@ -254,23 +257,20 @@ def test_sumologic_json_structure(sumologic_backend: SumoLogicCSERuleBackend):
     assert "name" in json_result
     assert "description" in json_result
     assert "enabled" in json_result
+    assert "prototype" in json_result
     assert "expression" in json_result
-    assert "assetField" in json_result
     assert "score" in json_result
-    assert "stream" in json_result
-    assert "category" in json_result
+    assert "entity_selectors" in json_result
 
     # Verify values
     assert json_result["enabled"] is True
-    assert json_result["stream"] == "record"
-    assert json_result["assetField"] == "device_hostname"
-    assert json_result["score"] == 4  # high
+    assert json_result["prototype"] is True  # test status
+    assert json_result["score"] == 6  # high
 
-    # Verify MITRE ATT&CK fields
-    assert "techniques" in json_result
-    assert "T1059.001" in json_result["techniques"]
-    assert "tactics" in json_result
-    assert "Execution" in json_result["tactics"]
+    # Verify MITRE ATT&CK tags in normalized format
+    assert "tags" in json_result
+    assert "_mitreAttackTechnique:T1059.001" in json_result["tags"]
+    assert "_mitreAttackTactic:TA0002" in json_result["tags"]  # Execution
 
 
 def test_sumologic_mitre_attack_mapping(sumologic_backend: SumoLogicCSERuleBackend):
@@ -299,27 +299,21 @@ def test_sumologic_mitre_attack_mapping(sumologic_backend: SumoLogicCSERuleBacke
 
     json_result = json.loads(result[0])
 
-    # Check techniques extracted
-    assert "techniques" in json_result
-    assert "T1003.001" in json_result["techniques"]
-    assert "T1055" in json_result["techniques"]
-
-    # Check tactics extracted
-    assert "tactics" in json_result
-    assert "Credential Access" in json_result["tactics"]
-    assert "Defense Evasion" in json_result["tactics"]
-
-    # Category should be first tactic in allowed list
-    assert json_result["category"] in ["Credential Access", "Defense Evasion"]
+    # Check tags in normalized format
+    assert "tags" in json_result
+    assert "_mitreAttackTechnique:T1003.001" in json_result["tags"]
+    assert "_mitreAttackTechnique:T1055" in json_result["tags"]
+    assert "_mitreAttackTactic:TA0006" in json_result["tags"]  # Credential Access
+    assert "_mitreAttackTactic:TA0005" in json_result["tags"]  # Defense Evasion
 
 
 def test_sumologic_severity_mapping(sumologic_backend: SumoLogicCSERuleBackend):
     """Test severity to risk score mapping"""
     test_cases = [
-        ("critical", 5),
-        ("high", 4),
+        ("critical", 8),
+        ("high", 6),
         ("medium", 3),
-        ("low", 2),
+        ("low", 1),
         ("informational", 1),
     ]
 

@@ -21,11 +21,6 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
     - Handling Windows event logs, Sysmon, security logs
     - Supporting process creation, network connection, DNS queries, file operations
     - Providing proper field mappings for authentication, user activity, and system events
-
-    Based on legacy implementation and CSE schema.
-    Reference:
-    - https://github.com/SigmaHQ/legacy-sigmatools/blob/master/tools/sigma/backends/sumologic.py
-    - https://github.com/SumoLogic/cloud-siem-content-catalog/blob/master/schema/full_schema.md
     """
     return ProcessingPipeline(
         name="Sumo Logic Cloud SIEM (CSE) Pipeline",

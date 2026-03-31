@@ -30,6 +30,7 @@ cp "$PROJECT_ROOT/tests/test_sigma_rule.yml" .
 # Test import and conversion
 echo "Testing conversion..."
 python -c "
+import json
 from sigma.collection import SigmaCollection
 from sigma.backends.sumologic import SumoLogicCSERuleBackend
 from sigma.pipelines.sumologic import sumologic_cse_pipeline
@@ -40,6 +41,8 @@ with open('test_sigma_rule.yml') as f:
 
 backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline())
 result = backend.convert(rule)
+json_result = json.loads(result[0])
+print(json_result)
 
 if result and len(result) > 0:
     print('✅ Integration test passed - rule converted successfully')
