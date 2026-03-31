@@ -165,7 +165,7 @@ This backend is maintained by:
 
 ## Resources
 
-- [Sumo Logic Cloud SIEM Documentation](https://help.sumologic.com/Cloud_SIEM)
+- [Sumo Logic Cloud SIEM Documentation](https://www.sumologic.com/help/docs/cse/)
 - [Sigma Rule Specification](https://github.com/SigmaHQ/sigma-specification)
 - [pySigma Documentation](https://github.com/SigmaHQ/pySigma)
 

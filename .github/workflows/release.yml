@@ -11,7 +11,7 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      contents: read  # Required to checkout code
+      contents: read  # Required to check out code
       id-token: write  # Required for OIDC authentication to PyPI
     steps:
       - uses: actions/checkout@v5
