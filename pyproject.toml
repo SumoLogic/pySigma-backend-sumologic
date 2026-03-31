@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysigma-backend-sumologic"
-version = "0.1.2"
+version = "0.1.3"
 description = "pySigma Sumo Logic backend"
 authors = ["Dinesh Meka <dinesh.meka@sumologic.com>"]
 license = "LGPL-3.0-only"
