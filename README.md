@@ -55,7 +55,17 @@ detection:
 
 ## Installation
 
-### From PyPI (Recommended)
+### Quick Start (Docker - Recommended for Testing)
+
+For the easiest setup with the included Sigma Rule Browser:
+
+```bash
+./quick-start.sh
+```
+
+This will set up a complete environment with Docker. See **[SETUP.md](SETUP.md)** for detailed instructions.
+
+### From PyPI
 
 ```bash
 pip install pysigma-backend-sumologic
@@ -69,7 +79,23 @@ cd pySigma-backend-sumologic
 pip install .
 ```
 
+For complete setup instructions including Docker, Poetry, and the Sigma Rule Browser, see **[SETUP.md](SETUP.md)**.
+
 ## Usage
+
+### Sigma Rule Browser (Web Interface)
+
+A Streamlit-based browser for exploring and converting Sigma rules:
+
+```bash
+# With Docker (easiest)
+docker-compose up
+
+# Or locally
+streamlit run sigma_rule_browser.py
+```
+
+Visit `http://localhost:8501` to browse, preview, and convert rules. See **[RULE_BROWSER.md](RULE_BROWSER.md)** for details.
 
 ### With sigma-cli
 
@@ -119,9 +145,74 @@ For a complete list of field mappings, see `sigma/pipelines/sumologic/sumologic.
 
 ## Limitations
 
+### General Limitations
+
 - **Correlation rules**: Not yet supported (Sigma correlation features)
 - **Regex modifiers**: Limited support for complex regex patterns
 - **Custom fields**: Fields not in the standard mapping must be manually mapped
+
+### Unsupported Fields
+
+#### Data Field (Windows Event Logs)
+
+The `Data` field in Windows Event Logs has **smart conversion** that automatically handles structured patterns but blocks arbitrary string matching.
+
+**How It Works:**
+
+✅ **Supported (automatically converted):**
+- **Key=Value patterns** (PowerShell logs): `Data|contains: 'EngineVersion=2.'` → `EventData.EngineVersion|contains: '2.'`
+- **Key:Value patterns** (MSSQL/App logs): `Data|contains: 'statement:DROP TABLE'` → `EventData.statement|contains: 'DROP TABLE'`
+
+❌ **Not supported (conversion fails):**
+- **Arbitrary strings**: `Data|contains: 'Net.WebClient'` - no field name to extract
+
+**Reason:** CSE parses Windows Event Log Data XML into structured `EventData.*` fields. Arbitrary string matching requires knowing which field contains the string, which isn't possible from the Data field alone.
+
+**Impact:** ~12 Sigma rules use arbitrary Data field patterns (primarily PowerShell Classic command detection rules).
+
+**Examples:**
+
+**Automatic Conversion (no changes needed):**
+```yaml
+# PowerShell downgrade attack detection
+detection:
+  selection:
+    Data|contains: 'EngineVersion=2.'  # Automatically converted to EventData.EngineVersion
+  condition: selection
+```
+↓ Converts to:
+```
+EventData.EngineVersion matches /.*2\..*/
+```
+
+**Manual Rewrite Required:**
+```yaml
+# Before (fails - arbitrary string)
+detection:
+  selection:
+    Data|contains: 'Net.WebClient'
+  condition: selection
+```
+↓ Rewrite to:
+```yaml
+# After (works - specific field)
+detection:
+  selection:
+    EventData.ContextInfo|contains: 'Net.WebClient'
+  condition: selection
+```
+
+**Common EventData field mappings:**
+- `EventData.TargetUserName` → `user_username`
+- `EventData.LogonType` → `logonType`
+- `EventData.IpAddress` → `srcDevice_ip`
+- `EventData.CommandLine` → `commandLine`
+- `EventData.ContextInfo` → Raw PowerShell context (for command/script content)
+- See CSE schema documentation for complete list
+
+#### Keywords Field
+
+Similarly, the `keywords` field (generic full-text search) is not supported as CSE requires structured field-based queries.
 
 ## Development
 

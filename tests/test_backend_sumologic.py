@@ -7,7 +7,11 @@ from sigma.collection import SigmaCollection
 
 @pytest.fixture
 def sumologic_backend():
-    return SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline())
+    # Disable confidence checking for backward compatibility with existing tests
+    return SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0
+    )
 
 
 def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
@@ -31,18 +35,30 @@ def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
         """)
     )
 
-    # Parse JSON result
-    json_result = json.loads(result[0])
+    # Parse JSON result (now wrapped in {"rules": [...]})
+    parsed_result = json.loads(result[0])
+    assert "rules" in parsed_result
+    json_result = parsed_result["rules"][0]
     print(json_result)
 
     # Verify it's valid JSON with expected structure
     assert "name" in json_result
+    assert "name_expression" in json_result
     assert "expression" in json_result
-    assert "score" in json_result
-    assert json_result["score"] == 3  # medium severity = score 3
-    assert "prototype" in json_result
-    assert json_result["prototype"] is True  # test status = prototype True
+    assert "score_mapping" in json_result
+    assert json_result["score_mapping"]["default"] == 3  # medium severity = score 3
+    assert "is_prototype" in json_result
+    assert json_result["is_prototype"] is True  # test status = prototype True
     assert "entity_selectors" in json_result
+
+    # Verify static fields
+    assert json_result["content_type"] == "RULE"
+    assert json_result["pattern_type"] == "templated_match"
+    assert json_result["stream"] == "record"
+    assert json_result["rule_source"] == "user"
+    assert "category" in json_result
+    assert "description_expression" in json_result
+    assert "summary_expression" in json_result
 
     # Verify query contains AND logic (uppercase 'AND' for CSE)
     assert "AND" in json_result["expression"]
@@ -72,12 +88,13 @@ def test_sumologic_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Verify OR logic (can be 'OR' or 'in' operator for CSE)
     assert "OR" in json_result["expression"] or "in" in json_result["expression"]
     assert "commandLine" in json_result["expression"]
-    assert json_result["score"] == 6  # high severity = score 6
+    assert json_result["score_mapping"]["default"] == 6  # high severity = score 6
 
 
 def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
@@ -105,10 +122,11 @@ def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend)
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Should contain both AND and OR
-    assert json_result["score"] == 8  # critical severity = score 8
+    assert json_result["score_mapping"]["default"] == 8  # critical severity = score 8
     assert "commandLine" in json_result["expression"]
     assert "baseImage" in json_result["expression"]
 
@@ -137,9 +155,10 @@ def test_sumologic_or_and_expression(sumologic_backend: SumoLogicCSERuleBackend)
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
-    assert json_result["score"] == 1  # low severity = score 1
+    assert json_result["score_mapping"]["default"] == 1  # low severity = score 1
     assert "OR" in json_result["expression"]
 
 
@@ -165,7 +184,8 @@ def test_sumologic_in_expression(sumologic_backend: SumoLogicCSERuleBackend):
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Should use 'in' operator or 'or' for multiple values
     assert "commandLine" in json_result["expression"]
@@ -192,7 +212,8 @@ def test_sumologic_regex_query(sumologic_backend: SumoLogicCSERuleBackend):
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Should contain 'matches' for regex in CSE
     assert "commandLine" in json_result["expression"]
@@ -218,7 +239,8 @@ def test_sumologic_wildcard_query(sumologic_backend: SumoLogicCSERuleBackend):
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Should use 'matches' for wildcards
     assert "commandLine" in json_result["expression"]
@@ -251,21 +273,37 @@ def test_sumologic_json_structure(sumologic_backend: SumoLogicCSERuleBackend):
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    assert "rules" in parsed_result
+    json_result = parsed_result["rules"][0]
 
     # Verify all required CSE fields
     assert "name" in json_result
-    assert "description" in json_result
+    assert "name_expression" in json_result
+    assert "description_expression" in json_result
+    assert "summary_expression" in json_result
     assert "enabled" in json_result
-    assert "prototype" in json_result
+    assert "is_prototype" in json_result
     assert "expression" in json_result
-    assert "score" in json_result
+    assert "score_mapping" in json_result
     assert "entity_selectors" in json_result
+    assert "category" in json_result
+
+    # Verify static fields
+    assert "content_type" in json_result
+    assert json_result["content_type"] == "RULE"
+    assert "pattern_type" in json_result
+    assert json_result["pattern_type"] == "templated_match"
+    assert "stream" in json_result
+    assert json_result["stream"] == "record"
+    assert "rule_source" in json_result
+    assert json_result["rule_source"] == "user"
 
     # Verify values
     assert json_result["enabled"] is True
-    assert json_result["prototype"] is True  # test status
-    assert json_result["score"] == 6  # high
+    assert json_result["is_prototype"] is True  # test status
+    assert json_result["score_mapping"]["default"] == 6  # high
+    assert json_result["score_mapping"]["type"] == "constant"
 
     # Verify MITRE ATT&CK tags in normalized format
     assert "tags" in json_result
@@ -297,7 +335,8 @@ def test_sumologic_mitre_attack_mapping(sumologic_backend: SumoLogicCSERuleBacke
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Check tags in normalized format
     assert "tags" in json_result
@@ -305,6 +344,9 @@ def test_sumologic_mitre_attack_mapping(sumologic_backend: SumoLogicCSERuleBacke
     assert "_mitreAttackTechnique:T1055" in json_result["tags"]
     assert "_mitreAttackTactic:TA0006" in json_result["tags"]  # Credential Access
     assert "_mitreAttackTactic:TA0005" in json_result["tags"]  # Defense Evasion
+
+    # Check category is derived from first tactic
+    assert json_result["category"] == "Credential Access"
 
 
 def test_sumologic_severity_mapping(sumologic_backend: SumoLogicCSERuleBackend):
@@ -336,8 +378,9 @@ def test_sumologic_severity_mapping(sumologic_backend: SumoLogicCSERuleBackend):
             """)
         )
 
-        json_result = json.loads(result[0])
-        assert json_result["score"] == expected_score, (
+        parsed_result = json.loads(result[0])
+        json_result = parsed_result["rules"][0]
+        assert json_result["score_mapping"]["default"] == expected_score, (
             f"Severity {severity} should map to score {expected_score}"
         )
 
@@ -365,7 +408,8 @@ def test_sumologic_field_mapping_sysmon(sumologic_backend: SumoLogicCSERuleBacke
         """)
     )
 
-    json_result = json.loads(result[0])
+    parsed_result = json.loads(result[0])
+    json_result = parsed_result["rules"][0]
 
     # Verify field mapping occurred
     assert "baseImage" in json_result["expression"]
@@ -413,18 +457,127 @@ def test_sumologic_multiple_rules(sumologic_backend: SumoLogicCSERuleBackend):
     result1 = sumologic_backend.convert(SigmaCollection.from_yaml(rule1_yaml))
     result2 = sumologic_backend.convert(SigmaCollection.from_yaml(rule2_yaml))
 
-    # Combine results
-    result = result1 + result2
+    # Each result is a JSON string with {"rules": [...]}
+    parsed_result_1 = json.loads(result1[0])
+    parsed_result_2 = json.loads(result2[0])
 
-    # Should have 2 rules
-    assert isinstance(result, list)
-    assert len(result) == 2
-
-    # Both should be valid JSON
-    json_result_1 = json.loads(result[0])
-    json_result_2 = json.loads(result[1])
+    # Extract rules
+    json_result_1 = parsed_result_1["rules"][0]
+    json_result_2 = parsed_result_2["rules"][0]
 
     assert "expression" in json_result_1
     assert "expression" in json_result_2
     assert "test1.exe" in json_result_1["expression"]
     assert "test2.exe" in json_result_2["expression"]
+
+
+def test_sumologic_schema_aware_numeric_quoting(sumologic_backend: SumoLogicCSERuleBackend):
+    """Test that numeric values are quoted when CSE field is string type."""
+    result = sumologic_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test Schema-Aware Quoting
+            id: 00000000-0000-0000-0000-000000000099
+            status: test
+            logsource:
+                product: windows
+                service: security
+            detection:
+                sel:
+                    EventID: 4624
+                    LogonType: 3
+                condition: sel
+        """)
+    )
+
+    parsed_result = json.loads(result[0])
+    expression = parsed_result["rules"][0]["expression"]
+
+    # logonType is string type in CSE schema - numeric value should be quoted
+    assert 'logonType="3"' in expression or "logonType='3'" in expression
+
+
+def test_sumologic_schema_aware_numeric_list(sumologic_backend: SumoLogicCSERuleBackend):
+    """Test that numeric values in lists are quoted when CSE field is string type."""
+    result = sumologic_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test Schema-Aware List Quoting
+            id: 00000000-0000-0000-0000-000000000098
+            status: test
+            logsource:
+                product: windows
+                service: security
+            detection:
+                sel:
+                    LogonType:
+                        - 2
+                        - 3
+                        - 10
+                condition: sel
+        """)
+    )
+
+    parsed_result = json.loads(result[0])
+    expression = parsed_result["rules"][0]["expression"]
+
+    # All numeric values should be quoted since logonType is string type
+    assert 'logonType in ("2", "3", "10")' in expression
+
+
+def test_sumologic_numeric_fields_unquoted(sumologic_backend: SumoLogicCSERuleBackend):
+    """Test that truly numeric fields remain unquoted."""
+    result = sumologic_backend.convert(
+        SigmaCollection.from_yaml("""
+            title: Test Numeric Fields
+            id: 00000000-0000-0000-0000-000000000097
+            status: test
+            logsource:
+                product: windows
+                category: process_creation
+            detection:
+                sel:
+                    ProcessId: 1234
+                condition: sel
+        """)
+    )
+
+    parsed_result = json.loads(result[0])
+    expression = parsed_result["rules"][0]["expression"]
+
+    # pid is int type in CSE schema - should remain unquoted
+    assert "pid=1234" in expression
+    assert 'pid="1234"' not in expression
+
+
+def test_sumologic_keywords_error(sumologic_backend: SumoLogicCSERuleBackend):
+    """Test that keywords (unbound values) produce helpful error with context."""
+    from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+
+    # Keywords are not supported - should get helpful error
+    with pytest.raises(SigmaFeatureNotSupportedByBackendError) as exc_info:
+        sumologic_backend.convert(
+            SigmaCollection.from_yaml("""
+                title: Keywords Test
+                id: 00000000-0000-0000-0001-000000000001
+                status: test
+                logsource:
+                    product: windows
+                    category: process_creation
+                detection:
+                    keywords:
+                        - 'mimikatz'
+                        - 'Invoke-Mimikatz'
+                    condition: keywords
+            """)
+        )
+
+    error_msg = str(exc_info.value)
+    # Should show original Sigma detection
+    assert "Unsupported Sigma pattern:" in error_msg
+    assert "keywords:" in error_msg
+    assert "mimikatz" in error_msg
+    assert "Invoke-Mimikatz" in error_msg
+    # Should explain why it's not supported
+    assert "CSE requires field-based queries" in error_msg
+    # Should show how to fix it
+    assert "Solution:" in error_msg
+    assert "commandLine|contains:" in error_msg

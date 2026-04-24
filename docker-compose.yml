@@ -1,0 +1,26 @@
+version: '3.8'
+
+services:
+  sigma-browser:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: sigma-rule-browser
+    ports:
+      - "8501:8501"
+    volumes:
+      # Mount the sigma rules repository
+      # Update the path on the left side to your local sigma repo
+      - /Users/jcrowley/Documents/GitHub/sigma:/sigma-rules:ro
+      # Mount local development code for live updates
+      - ./sigma:/app/sigma
+      - ./sigma_rule_browser.py:/app/sigma_rule_browser.py
+    environment:
+      - SIGMA_REPO_PATH=/sigma-rules
+    restart: unless-stopped
+    networks:
+      - sigma-network
+
+networks:
+  sigma-network:
+    driver: bridge

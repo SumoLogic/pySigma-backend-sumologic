@@ -1,7 +1,7 @@
 [tool.poetry]
 name = "pysigma-backend-sumologic"
-version = "0.1.3"
-description = "pySigma Sumo Logic backend"
+version = "0.2.0"
+description = "pySigma Sumo Logic backend with confidence scoring"
 authors = ["Dinesh Meka <dinesh.meka@sumologic.com>"]
 license = "LGPL-3.0-only"
 repository = "https://github.com/SumoLogic/pySigma-backend-sumologic"
@@ -9,15 +9,22 @@ packages = [
     { include = "sigma" }
 ]
 
+# Include schema file in distribution
+include = [
+    "sigma/pipelines/sumologic/schema/descriptions.yaml"
+]
+
 [tool.poetry.dependencies]
 python = "^3.10"
 pysigma = "^1.0"
 defusedxml = "^0.7.1"
+pyyaml = "^6.0"
 
 [tool.poetry.group.dev.dependencies]
 pytest = "^8.0"
 pytest-cov = "^4.0"
 coverage = "^7.0"
+streamlit = "^1.32.0"
 
 [build-system]
 requires = ["poetry-core>=1.8.1"]

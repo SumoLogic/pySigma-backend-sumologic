@@ -7,8 +7,10 @@ from sigma.types import (
     SigmaRegularExpressionFlag,
 )
 from sigma.rule import SigmaRule
+from sigma.processing.pipeline import ProcessingPipeline
 import re
 import json
+import warnings
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 
@@ -70,13 +72,14 @@ class SumoLogicCSEBackend(TextQueryBackend):
     # String matching operators - use wildcards with matches
     startswith_expression: ClassVar[str] = "{field} matches /{value}.*/"
     endswith_expression: ClassVar[str] = "{field} matches /.*{value}/"
-    contains_expression: ClassVar[str] = "{field} matches /{value}/"
+    contains_expression: ClassVar[str] = "{field} matches /.*{value}.*/"
     wildcard_match_expression: ClassVar[str] = "{field} matches /{value}/"
 
     # Regular expressions - CSE uses 'matches' with regex
+    # Must escape / (delimiter), and common regex metacharacters when used as literals
     re_expression: ClassVar[str] = "{field} matches /{regex}/"
     re_escape_char: ClassVar[str] = "\\"
-    re_escape: ClassVar[Tuple[str, ...]] = ()
+    re_escape: ClassVar[Tuple[str, ...]] = ("/", ".")
     re_escape_escape_char: bool = True
     re_flag_prefix: bool = False  # CSE doesn't use flag prefixes in regex
     re_flags: Dict[SigmaRegularExpressionFlag, str] = {
@@ -130,10 +133,68 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self,
         processing_pipeline: Optional[Any] = None,
         collect_errors: bool = False,
+        min_confidence: float = 0.7,
+        schema_path: Optional[str] = None,
+        include_confidence_metadata: bool = True,
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
         self.rule_metadata = []
+        self.min_confidence = min_confidence
+        self.schema_path = schema_path
+        self.include_confidence_metadata = include_confidence_metadata
+
+        # Load CSE schema for field type checking
+        from sigma.pipelines.sumologic.schema_loader import SchemaLoader
+        self.schema = SchemaLoader.load(schema_path)  # Uses bundled schema if path is None
+
+    def escape_and_quote_field(self, field_name: str) -> str:
+        """
+        Escape and quote field names with CSE fields[] syntax for vendor-specific fields.
+
+        CSE has two ways to reference fields:
+        1. Normalized CSE schema fields: Direct reference (e.g., action, user_username)
+        2. Vendor-specific/raw fields: Must use fields['fieldname'] syntax
+
+        This method wraps vendor-specific fields (unmapped fields not in CSE schema)
+        in the fields[] syntax.
+
+        Args:
+            field_name: Field name to escape/quote
+
+        Returns:
+            Escaped field name, wrapped in fields[] if vendor-specific
+
+        Example:
+            user_username → user_username (CSE schema field)
+            auditType.category → fields['auditType.category'] (vendor-specific)
+        """
+        if not field_name:
+            return field_name
+
+        # Check if this is a CSE schema field (normalized field)
+        if self.schema and self.schema.field_exists(field_name):
+            # This is a known CSE schema field - use direct reference
+            return field_name
+
+        # Check if this looks like a vendor-specific field
+        # Indicators: contains dots (nested structure), camelCase with dots, etc.
+        is_vendor_specific = (
+            '.' in field_name or  # Nested structure: auditType.category
+            field_name.startswith('EventData.') or  # Windows EventData
+            field_name.startswith('fields.')  # Already wrapped
+        )
+
+        if is_vendor_specific:
+            # Wrap in fields[] syntax
+            # Remove 'fields.' prefix if already present
+            if field_name.startswith('fields.'):
+                field_name = field_name[7:]  # Remove "fields."
+
+            return f"fields['{field_name}']"
+
+        # Default: use field name as-is (might be CSE schema field not in our schema file)
+        return field_name
 
     def convert_value_str(self, s, state: ConversionState) -> str:
         """
@@ -149,18 +210,421 @@ class SumoLogicCSEBackend(TextQueryBackend):
         s = s.replace('"', '\\"')
         return f'"{s}"'
 
+    def convert_condition_field_eq_val_num(self, cond, state: ConversionState) -> str:
+        """
+        Convert field=number condition with CSE schema type awareness.
+
+        CSE schema has many fields that are logically numeric but typed as strings
+        (e.g., logonType="3", metadata_deviceEventId="Security-4624").
+
+        This method checks the target field's type in the schema and quotes numeric
+        values if the field is a string type.
+        """
+        from sigma.conditions import ConditionFieldEqualsValueExpression
+
+        if not isinstance(cond, ConditionFieldEqualsValueExpression):
+            # Fallback to parent implementation
+            return super().convert_condition_field_eq_val_num(cond, state)
+
+        field_name = cond.field
+        numeric_value = cond.value.to_plain()
+
+        # Apply vendor-specific field wrapping
+        escaped_field = self.escape_and_quote_field(field_name)
+
+        # Check if field exists in schema and is a string type
+        if self.schema and field_name:
+            field_schema = self.schema.get_field(field_name)
+            if field_schema and field_schema.field_type == "string":
+                # Field is a string type - quote the numeric value
+                return f'{escaped_field}="{numeric_value}"'
+
+        # Field is numeric type or not in schema - use unquoted number
+        return f"{escaped_field}={numeric_value}"
+
+    def convert_condition_as_in_expression(self, cond, state: ConversionState) -> str:
+        """
+        Convert field in (value_list) with CSE schema type awareness.
+
+        Overrides base class to quote numeric values when target field is a string type.
+        """
+        from sigma.conditions import ConditionOR, ConditionAND, ConditionFieldEqualsValueExpression
+        from sigma.types import SigmaString
+        from typing import Union, cast
+
+        if not all(isinstance(arg, ConditionFieldEqualsValueExpression) for arg in cond.args):
+            return super().convert_condition_as_in_expression(cond, state)
+
+        field_name = cast(ConditionFieldEqualsValueExpression, cond.args[0]).field
+
+        # Check if field is a string type in schema
+        field_is_string = False
+        if self.schema and field_name:
+            field_schema = self.schema.get_field(field_name)
+            if field_schema and field_schema.field_type == "string":
+                field_is_string = True
+
+        # Build the value list with proper quoting based on field type
+        values = []
+        for arg in cond.args:
+            val = cast(ConditionFieldEqualsValueExpression, arg).value
+            if isinstance(val, SigmaString):
+                # String value - use standard string conversion (always quoted)
+                values.append(self.convert_value_str(val, state))
+            else:
+                # Numeric value
+                if field_is_string:
+                    # Field is string type - quote the number
+                    values.append(f'"{val.to_plain()}"')
+                else:
+                    # Field is numeric type - no quotes
+                    values.append(str(val.to_plain()))
+
+        return self.field_in_list_expression.format(
+            field=self.escape_and_quote_field(field_name),
+            list=self.list_separator.join(values)
+        )
+
+    def convert_condition_val_str(self, cond, state: ConversionState) -> str:
+        """
+        Override to provide better error messages for unsupported unbound value patterns.
+
+        Unbound values are values without field names (e.g., keywords lists).
+        CSE requires field-based queries, so we provide helpful context about what failed.
+        """
+        from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+
+        # Get the value being converted
+        cond_value = cond.value
+
+        # Build error message with context
+        error_msg = "Conversion failed: Unbound value expressions (keywords) are not supported.\n\n"
+
+        # Show the Sigma detection pattern
+        error_msg += "Unsupported Sigma pattern:\n"
+        error_msg += "  detection:\n"
+
+        # Try to extract the detection item name from the parent chain
+        detection_name = "keywords"  # default
+        if hasattr(cond, 'parent') and cond.parent:
+            parent = cond.parent
+            # Walk up to find the detection name
+            while parent:
+                if hasattr(parent, 'parent') and hasattr(parent.parent, 'detections'):
+                    # Found the SigmaDetections object, search for this detection
+                    for name, detection in parent.parent.detections.items():
+                        if detection == parent:
+                            detection_name = name
+                            break
+                    break
+                parent = getattr(parent, 'parent', None)
+
+        error_msg += f"    {detection_name}:\n"
+
+        # Show all values - walk up the parent chain to find the detection item
+        values_to_show = [cond_value]  # Default to current value
+
+        # Walk up parent chain: ConditionValueExpression -> ConditionOR -> SigmaDetection -> detection_items
+        if hasattr(cond, 'parent') and cond.parent:
+            parent = cond.parent
+            # If parent is ConditionOR/ConditionAND, go up one more level to SigmaDetection
+            if hasattr(parent, 'parent') and parent.parent:
+                sigma_detection = parent.parent
+                # SigmaDetection has detection_items
+                if hasattr(sigma_detection, 'detection_items') and sigma_detection.detection_items:
+                    # Get the first (usually only) detection item
+                    detection_item = sigma_detection.detection_items[0]
+                    if hasattr(detection_item, 'value') and isinstance(detection_item.value, list):
+                        values_to_show = detection_item.value
+
+        for val in values_to_show:
+            error_msg += f"      - '{val}'\n"
+
+        error_msg += f"    condition: {detection_name}\n"
+        error_msg += "\n"
+
+        error_msg += (
+            "Reason: CSE requires field-based queries. Keywords (unbound values) search across "
+            "all fields, which is not supported in CSE's structured query language.\n\n"
+            "Solution: Rewrite the rule to specify which fields to search.\n\n"
+            "Example rewrite:\n"
+            "  Before:\n"
+            "    detection:\n"
+            "      keywords:\n"
+            "        - 'suspicious'\n"
+            "        - 'malware'\n"
+            "      condition: keywords\n\n"
+            "  After:\n"
+            "    detection:\n"
+            "      selection:\n"
+            "        commandLine|contains:\n"
+            "          - 'suspicious'\n"
+            "          - 'malware'\n"
+            "      condition: selection\n\n"
+            "Common searchable fields:\n"
+            "  - commandLine (process commands)\n"
+            "  - file_path (file paths)\n"
+            "  - http_url (URLs)\n"
+            "  - description (event descriptions)\n"
+            "  - See CSE schema for field-specific searches"
+        )
+
+        raise SigmaFeatureNotSupportedByBackendError(error_msg)
+
+    def _transform_windows_eventid(self, rule: SigmaRule, query: str) -> str:
+        """
+        Transform Windows EventID values to include channel prefix.
+
+        CSE uses format: {{channel}}-{{EventID}} (e.g., "Security-4624")
+        Sigma rules just have EventID numbers (e.g., "4624")
+
+        This transforms:
+          metadata_deviceEventId=4624 → metadata_deviceEventId="Security-4624"
+
+        Channel is determined from logsource.service:
+          - security → "Security"
+          - system → "System"
+          - application → "Application"
+          - etc.
+
+        Args:
+            rule: Sigma rule object
+            query: Generated CSE query expression
+
+        Returns:
+            Query with transformed EventID values
+        """
+        # Only apply if query contains metadata_deviceEventId
+        if "metadata_deviceEventId" not in query:
+            return query
+
+        # Get Windows channel from logsource.service
+        if not rule.logsource or not hasattr(rule.logsource, "service"):
+            return query
+
+        service = rule.logsource.service
+        if not service:
+            return query
+
+        # Map service name to Windows channel name
+        service_to_channel = {
+            "security": "Security",
+            "system": "System",
+            "application": "Application",
+            "powershell": "PowerShell",
+            "powershell-classic": "PowerShell",
+            "sysmon": "Microsoft-Windows-Sysmon/Operational",
+            "taskscheduler": "Microsoft-Windows-TaskScheduler/Operational",
+            "wmi": "Microsoft-Windows-WMI-Activity/Operational",
+            "dns-server": "DNS-Server",
+            "firewall-as": "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall",
+        }
+
+        channel = service_to_channel.get(service.lower())
+        if not channel:
+            # Unknown service, leave as-is
+            return query
+
+        # Transform EventID values: metadata_deviceEventId="4624" → metadata_deviceEventId="Security-4624"
+        # Also handle EventID in lists: metadata_deviceEventId in ("4624", "4625") → metadata_deviceEventId in ("Security-4624", "Security-4625")
+
+        # Pattern 1: Single value (metadata_deviceEventId="4624" or metadata_deviceEventId=4624)
+        def replace_single_quoted(match):
+            event_id = match.group(1)
+            return f'metadata_deviceEventId="{channel}-{event_id}"'
+
+        # First handle quoted values
+        query = re.sub(r'metadata_deviceEventId="(\d+)"', replace_single_quoted, query)
+        # Then handle unquoted values (for backwards compatibility)
+        query = re.sub(r'metadata_deviceEventId=(\d+)', replace_single_quoted, query)
+
+        # Pattern 2: In list (metadata_deviceEventId in ("4624", "4625") or in (4624, 4625))
+        def replace_list(match):
+            list_content = match.group(1)
+            # Extract all quoted or unquoted numbers
+            event_ids = re.findall(r'"?(\d+)"?', list_content)
+            # Add channel prefix to each
+            transformed_ids = [f'"{channel}-{eid}"' for eid in event_ids]
+            return f'metadata_deviceEventId in ({", ".join(transformed_ids)})'
+
+        query = re.sub(r'metadata_deviceEventId in \(([^)]+)\)', replace_list, query)
+
+        return query
+
+    def _inject_vendor_product_metadata(self, rule: SigmaRule, query: str) -> str:
+        """
+        Inject metadata_vendor and metadata_product filters based on Sigma logsource.
+
+        CSE parsers are vendor/product-specific, and queries should filter by these
+        fields for proper log source targeting.
+
+        Based on CSE Parser EventID Analysis (April 2026):
+        - 252 parsers analyzed
+        - Each parser has specific vendor/product combination
+        - Proper filtering ensures query runs against correct log source
+
+        Args:
+            rule: Sigma rule object
+            query: Generated CSE query expression
+
+        Returns:
+            Query with vendor/product metadata prepended
+
+        Example:
+            Input:  baseImage="powershell.exe"
+            Output: metadata_vendor="Microsoft" AND metadata_product="Windows"
+                    AND baseImage="powershell.exe"
+        """
+        from sigma.pipelines.sumologic.vendor_product_mapping import VendorProductMapper
+
+        if not rule.logsource:
+            return query
+
+        # Get vendor/product mapping
+        mapping = VendorProductMapper.get_vendor_product(
+            product=rule.logsource.product if hasattr(rule.logsource, 'product') else None,
+            service=rule.logsource.service if hasattr(rule.logsource, 'service') else None,
+            category=rule.logsource.category if hasattr(rule.logsource, 'category') else None
+        )
+
+        if not mapping:
+            # No mapping found - log warning but don't fail
+            import warnings
+            logsource_str = f"product={rule.logsource.product}, service={getattr(rule.logsource, 'service', None)}, category={getattr(rule.logsource, 'category', None)}"
+            warnings.warn(
+                f"No CSE parser mapping found for logsource: {logsource_str}. "
+                f"Rule may not match expected log sources in CSE."
+            )
+            return query
+
+        vendor, product, pattern_type = mapping
+
+        # Prepend vendor/product filters to the query
+        metadata_filter = f'metadata_vendor="{vendor}" AND metadata_product="{product}"'
+
+        # Combine with existing query
+        if query.strip():
+            return f"{metadata_filter} AND {query}"
+        else:
+            return metadata_filter
+
+    def _transform_windows_metadata_fields(self, rule: SigmaRule, query: str) -> str:
+        """
+        Transform Windows metadata fields to CSE fields[] syntax.
+
+        Windows event metadata fields in Sigma use underscore notation:
+          - Provider_Name
+          - Computer
+          - Channel
+          - etc.
+
+        CSE stores these in the fields object with dot notation:
+          - fields['Provider.Name']
+          - fields['Computer']
+          - fields['Channel']
+
+        This transforms:
+          Provider_Name="value" → fields['Provider.Name']="value"
+
+        Args:
+            rule: Sigma rule object
+            query: Generated CSE query expression
+
+        Returns:
+            Query with transformed metadata fields
+        """
+        # Only apply to Windows rules
+        if not rule.logsource or not hasattr(rule.logsource, "product"):
+            return query
+
+        if rule.logsource.product and rule.logsource.product.lower() != "windows":
+            return query
+
+        # Map Windows metadata fields (Sigma underscore → CSE dot notation in fields[])
+        # Based on Windows Event Log XML schema
+        metadata_fields = {
+            "Provider_Name": "fields['Provider.Name']",
+            "Provider_Guid": "fields['Provider.Guid']",
+            "Channel": "fields['Channel']",
+            "Computer": "fields['Computer']",
+            "EventRecordID": "fields['EventRecordID']",
+            "ProcessID": "fields['Execution.ProcessID']",
+            "ThreadID": "fields['Execution.ThreadID']",
+            "Keywords": "fields['Keywords']",
+            "Level": "fields['Level']",
+            "Task": "fields['Task']",
+            "Opcode": "fields['Opcode']",
+            "Version": "fields['Version']",
+        }
+
+        # Transform each metadata field in the query
+        for sigma_field, cse_field in metadata_fields.items():
+            # Replace field name in various contexts:
+            # 1. Equality: Provider_Name="value"
+            query = re.sub(
+                rf'\b{sigma_field}=',
+                f'{cse_field}=',
+                query
+            )
+
+            # 2. In operator: Provider_Name in (...)
+            query = re.sub(
+                rf'\b{sigma_field}\s+in\s+',
+                f'{cse_field} in ',
+                query
+            )
+
+            # 3. Matches operator: Provider_Name matches /pattern/
+            query = re.sub(
+                rf'\b{sigma_field}\s+matches\s+',
+                f'{cse_field} matches ',
+                query
+            )
+
+        return query
+
     def finalize_query_default(
         self, rule: SigmaRule, query: str, index: int, state: ConversionState
     ) -> str:
         """
         Finalize query and create rule JSON metadata.
-        Also clean up unnecessary quotes in regex expressions.
+        Also clean up unnecessary quotes in regex expressions and escape special chars.
         """
-        # Remove quotes from values inside regex patterns
-        # Pattern: matches /"value"/ should become matches /value/
+        # Escape special regex characters in values before removing quotes
+        # CSE uses / as regex delimiter, so literal / must be escaped as \/
+        # Also escape . to match literal dots, not "any character"
+        def escape_regex_value(match):
+            prefix = match.group(1) or ""  # Leading .*
+            value = match.group(2)  # The quoted value
+            suffix = match.group(3) or ""  # Trailing .*
+
+            # Escape forward slashes (regex delimiter)
+            value = value.replace("/", "\\/")
+            # Escape dots to match literal dots
+            value = value.replace(".", "\\.")
+            # Escape other regex metacharacters that should be literal
+            value = value.replace("(", "\\(").replace(")", "\\)")
+            value = value.replace("[", "\\[").replace("]", "\\]")
+            value = value.replace("{", "\\{").replace("}", "\\}")
+            value = value.replace("^", "\\^").replace("$", "\\$")
+            value = value.replace("+", "\\+").replace("?", "\\?")
+            value = value.replace("|", "\\|")
+
+            return f"matches /{prefix}{value}{suffix}/"
+
+        # Remove quotes and escape special characters in regex patterns
         query = re.sub(
-            r'matches /(\.\*)?\"([^"]+)\"(\.\*)?/', r"matches /\1\2\3/", query
+            r'matches /(\.\*)?\"([^"]+)\"(\.\*)?/', escape_regex_value, query
         )
+
+        # Transform Windows EventID values to include channel prefix
+        query = self._transform_windows_eventid(rule, query)
+
+        # Transform Windows metadata fields to fields[] syntax
+        query = self._transform_windows_metadata_fields(rule, query)
+
+        # Inject vendor/product metadata based on logsource
+        query = self._inject_vendor_product_metadata(rule, query)
 
         # Create rule JSON and store it
         rule_json = self.create_rule_json(rule, query)
@@ -171,9 +635,13 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     def finalize_output_default(self, queries: List[str]) -> Any:
         """
-        Finalize output by returning list of JSON strings.
+        Finalize output by wrapping in rules array structure.
         """
-        return queries
+        # Parse JSON strings back to objects
+        rule_objects = [json.loads(q) for q in queries]
+
+        # Wrap in rules structure and return as list
+        return [json.dumps({"rules": rule_objects}, indent=4, sort_keys=False)]
 
     def finalize(self, queries: List[Any], output_format: str) -> Any:
         """
@@ -212,8 +680,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Map severity to risk score
         risk_score = self._map_risk_score(rule.level)
 
-        # Determine category from tactics
-        category = self._determine_category(tactics)
+        # Determine category from MITRE tactic tags
+        category = self._determine_category_from_tags(mitre_tags)
 
         # Build comprehensive description
         description = self._build_description(rule, techniques)
@@ -226,10 +694,16 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Create rule JSON
         rule_json = {
-            "name": rule.title,
-            "description": description,
+            "content_type": "RULE",
             "enabled": enabled,
-            "prototype": prototype,
+            "is_prototype": prototype,
+            "name": rule.title,
+            "name_expression": rule.title,
+            "rule_source": "user",
+            "summary_expression": "",
+            "pattern_type": "templated_match",
+            "stream": "record",
+            "description_expression": description,
             "expression": query,
         }
 
@@ -237,14 +711,197 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if entity_selectors:
             rule_json["entity_selectors"] = entity_selectors
 
-        # Add score
-        rule_json["score"] = risk_score
+        # Add score mapping
+        rule_json["score_mapping"] = {
+            "default": risk_score,
+            "type": "constant",
+            "field": None,
+            "mapping": []
+        }
 
         # Add tags array with normalized MITRE tags
         if mitre_tags:
             rule_json["tags"] = mitre_tags
 
+        # Add category (derived from MITRE tactic tags)
+        rule_json["category"] = category
+
+        # Collect and inject confidence metadata
+        if self.include_confidence_metadata:
+            confidence_metadata = self._collect_confidence_metadata(rule)
+
+            # Check confidence threshold
+            if confidence_metadata["overall_score"] < confidence_metadata["threshold_used"]:
+                # Threshold failure - build detailed error message
+                error_msg = self._build_confidence_error_message(confidence_metadata)
+
+                if self.collect_errors:
+                    # In collect_errors mode, store error and return None
+                    # The caller will handle skipping this rule
+                    raise ValueError(error_msg)
+                else:
+                    # In normal mode, fail immediately with detailed error
+                    raise ValueError(error_msg)
+
+            # Add confidence metadata to rule JSON
+            rule_json["mapping_confidence"] = confidence_metadata
+
         return rule_json
+
+    def _get_used_fields(self, rule: SigmaRule) -> set:
+        """
+        Extract the set of field names actually used in the rule's detection logic.
+
+        Args:
+            rule: Sigma rule being analyzed
+
+        Returns:
+            Set of field names used in detection
+        """
+        used_fields = set()
+
+        # Traverse detection items to collect field names
+        if hasattr(rule, "detection") and rule.detection and hasattr(rule.detection, "detections"):
+            for detection_name, detection in rule.detection.detections.items():
+                if hasattr(detection, "detection_items"):
+                    for item in detection.detection_items:
+                        if hasattr(item, "field") and item.field:
+                            used_fields.add(item.field)
+
+        return used_fields
+
+    def _collect_confidence_metadata(self, rule: SigmaRule) -> Dict[str, Any]:
+        """
+        Collect confidence metadata from pipeline transformations.
+
+        Args:
+            rule: Sigma rule being converted
+
+        Returns:
+            Confidence metadata dictionary for injection into rule JSON
+        """
+        from sigma.pipelines.sumologic.sumologic import ConfidenceAwareFieldMapping
+        from sigma.pipelines.sumologic.confidence import get_category_threshold
+
+        all_field_mappings = []
+        all_confidences = []
+        logsource_category = "unknown"
+        warnings_list = []
+
+        # Get the set of fields actually used in the rule's detection logic (already transformed)
+        used_cse_fields = self._get_used_fields(rule)
+
+        # Build reverse mapping from CSE field → Sigma field
+        cse_to_sigma = {}
+        if self.last_processing_pipeline and hasattr(self.last_processing_pipeline, "items"):
+            for item in self.last_processing_pipeline.items:
+                if hasattr(rule, "applied_processing_items") and \
+                   item.identifier not in rule.applied_processing_items:
+                    continue
+                transformation = item.transformation
+                if isinstance(transformation, ConfidenceAwareFieldMapping):
+                    # Build reverse mapping
+                    for sigma_field, cse_field in transformation.mapping.items():
+                        cse_to_sigma[cse_field] = sigma_field
+
+        # Extract confidence from pipeline transformations
+        # IMPORTANT: Only include transformations that were actually applied to this rule
+        if self.last_processing_pipeline and hasattr(self.last_processing_pipeline, "items"):
+            for item in self.last_processing_pipeline.items:
+                # Skip transformations that weren't applied to this specific rule
+                if hasattr(rule, "applied_processing_items") and \
+                   item.identifier not in rule.applied_processing_items:
+                    continue
+
+                transformation = item.transformation
+                if isinstance(transformation, ConfidenceAwareFieldMapping):
+                    # Get confidence metadata from transformation
+                    metadata = transformation.get_confidence_metadata()
+                    logsource_category = metadata["logsource_category"]
+
+                    # Filter to only include fields that are actually used in the rule
+                    for mapping in metadata["field_mappings"]:
+                        sigma_field = mapping["sigma_field"]
+                        cse_field = mapping["cse_field"]
+
+                        # Check if this CSE field was used in the detection logic
+                        if cse_field in used_cse_fields:
+                            all_field_mappings.append(mapping)
+                            all_confidences.append(mapping["confidence"])
+                            warnings_list.extend(mapping.get("warnings", []))
+
+        # Compute overall confidence (weighted average)
+        if all_confidences:
+            overall_score = sum(all_confidences) / len(all_confidences)
+        else:
+            overall_score = 1.0  # No mappings = full confidence
+
+        # Get threshold for this category
+        category_threshold = get_category_threshold(logsource_category)
+
+        # Use user-configured minimum confidence if higher than category threshold
+        # Special case: min_confidence=0.0 disables all threshold checking
+        if self.min_confidence == 0.0:
+            threshold_used = 0.0
+        else:
+            threshold_used = max(self.min_confidence, category_threshold)
+
+        return {
+            "overall_score": round(overall_score, 3),
+            "threshold_used": round(threshold_used, 3),
+            "category_threshold": round(category_threshold, 3),
+            "logsource_category": logsource_category,
+            "field_mappings": all_field_mappings,
+            "warnings": warnings_list,
+            "blocked": overall_score < threshold_used,
+        }
+
+    def _build_confidence_error_message(self, confidence_metadata: Dict[str, Any]) -> str:
+        """
+        Build detailed error message for confidence threshold failures.
+
+        Args:
+            confidence_metadata: Confidence metadata collected from pipeline
+
+        Returns:
+            Formatted error message explaining why conversion was blocked
+        """
+        overall = confidence_metadata["overall_score"]
+        threshold = confidence_metadata["threshold_used"]
+        category = confidence_metadata["logsource_category"]
+
+        msg = [
+            f"Conversion blocked: Confidence score {overall:.3f} below threshold {threshold:.3f}",
+            f"Log source category: {category}",
+            "",
+            "Low-confidence field mappings:",
+        ]
+
+        # List field mappings below threshold
+        for mapping in confidence_metadata["field_mappings"]:
+            if mapping["confidence"] < threshold:
+                sigma_field = mapping["sigma_field"]
+                cse_field = mapping["cse_field"]
+                conf = mapping["confidence"]
+                factors = mapping["factors"]
+
+                msg.append(f"  - {sigma_field} → {cse_field}: {conf:.3f}")
+                msg.append(f"    Factors: semantic={factors['semantic_similarity']:.2f}, "
+                          f"data_pres={factors['data_preservation']:.2f}, "
+                          f"type={factors['type_compatibility']:.2f}, "
+                          f"specificity={factors['field_specificity']:.2f}")
+
+        # Add warnings if any
+        if confidence_metadata["warnings"]:
+            msg.append("")
+            msg.append("Warnings:")
+            for warning in confidence_metadata["warnings"]:
+                msg.append(f"  - {warning}")
+
+        msg.append("")
+        msg.append(f"To allow this conversion: Use -O min_confidence={overall - 0.05:.2f} or lower")
+
+        return "\n".join(msg)
 
     def _extract_attack_tags(
         self, tags: List[Any]
@@ -437,85 +1094,144 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     def _get_entity_selectors(self, logsource: Any) -> List[Dict[str, str]]:
         """
-        Get entity selectors based on logsource category.
+        Get entity selectors based on logsource category or product.
+
+        Strategy:
+        1. First try to determine from category (most specific)
+        2. If no category, try to determine from product (educated guess)
+        3. If neither matches known patterns, return empty list (fail safely)
 
         Args:
             logsource: Sigma rule logsource object
 
         Returns:
-            List of entity selector dictionaries
+            List of entity selector dictionaries (empty if cannot determine confidently)
         """
         entity_selectors = []
 
         if not logsource:
             return entity_selectors
 
+        # Extract category and product
         category = None
+        product = None
         if hasattr(logsource, "category"):
             category = logsource.category
+        if hasattr(logsource, "product"):
+            product = logsource.product
 
-        # Map categories to entity selectors based on feedback
+        # Priority 1: Map by category (most specific)
         if category == "process_creation":
-            entity_selectors = [
+            return [
                 {"entity_type": "_hostname", "expression": "device_hostname"},
                 {"entity_type": "_username", "expression": "user_username"},
                 {"entity_type": "_process", "expression": "baseImage"},
             ]
         elif category in ["network_connection", "firewall"]:
-            entity_selectors = [
+            return [
                 {"entity_type": "_hostname", "expression": "device_hostname"},
                 {"entity_type": "_ip", "expression": "srcDevice_ip"},
             ]
         elif category == "file_event":
-            entity_selectors = [
+            return [
                 {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_file", "expression": "user_username"},
+                {"entity_type": "_file", "expression": "file_path"},
             ]
         elif category == "dns_query":
-            entity_selectors = [
+            return [
                 {"entity_type": "_hostname", "expression": "device_hostname"},
                 {"entity_type": "_domain", "expression": "http_url_fqdn"},
             ]
         elif category == "authentication":
-            entity_selectors = [
+            return [
                 {"entity_type": "_hostname", "expression": "device_hostname"},
                 {"entity_type": "_ip", "expression": "device_ip"},
                 {"entity_type": "_username", "expression": "user_username"},
             ]
         elif category == "registry_event":
-            entity_selectors = [
+            return [
                 {"entity_type": "_hostname", "expression": "device_hostname"},
                 {"entity_type": "_username", "expression": "user_username"},
             ]
-        else:
-            # Default to hostname for unknown categories
-            entity_selectors = [
-                {"entity_type": "_hostname", "expression": "device_hostname"}
+        elif category == "image_load":
+            return [
+                {"entity_type": "_hostname", "expression": "device_hostname"},
+                {"entity_type": "_username", "expression": "user_username"},
             ]
 
+        # Priority 2: Map by product (educated guess when no category)
+        if product:
+            product_lower = product.lower()
+
+            # Windows, Linux, macOS: hostname + username
+            if product_lower in ["windows", "linux", "macos"]:
+                return [
+                    {"entity_type": "_hostname", "expression": "device_hostname"},
+                    {"entity_type": "_username", "expression": "user_username"},
+                ]
+
+            # Cloud providers: source IP + username
+            elif product_lower in ["azure", "aws"]:
+                return [
+                    {"entity_type": "_ip", "expression": "srcDevice_ip"},
+                    {"entity_type": "_username", "expression": "user_username"},
+                ]
+
+            # GitHub: username (user-driven actions)
+            elif product_lower == "github":
+                return [
+                    {"entity_type": "_username", "expression": "user_username"},
+                ]
+
+            # Office 365 / M365: username
+            elif product_lower in ["office365", "m365"]:
+                return [
+                    {"entity_type": "_username", "expression": "user_username"},
+                ]
+
+        # Priority 3: Fail safely - return empty list
+        # Better to have no entity selectors than wrong ones
+        # Rule will need manual review for entity selection
         return entity_selectors
 
-    def _determine_category(self, tactics: List[str]) -> str:
+    def _determine_category_from_tags(self, mitre_tags: List[str]) -> str:
         """
-        Determine CSE rule category from MITRE tactics.
+        Determine CSE rule category from MITRE tactic tags.
+
+        Per platform implementation: Category is derived from the first MITRE tactic tag
+        by looking up the tactic ID and using its label as the category.
 
         Args:
-            tactics: List of MITRE ATT&CK tactics
+            mitre_tags: List of normalized MITRE tags (e.g., ["_mitreAttackTactic:TA0002"])
 
         Returns:
-            Category string
+            Category string (tactic label or "Unknown/Other")
         """
-        if not tactics:
-            return self.DEFAULT_CATEGORY
+        # Mapping of MITRE tactic IDs to their labels (which are the categories)
+        TACTIC_ID_TO_CATEGORY = {
+            "TA0001": "Initial Access",
+            "TA0002": "Execution",
+            "TA0003": "Persistence",
+            "TA0004": "Privilege Escalation",
+            "TA0005": "Defense Evasion",
+            "TA0006": "Credential Access",
+            "TA0007": "Discovery",
+            "TA0008": "Lateral Movement",
+            "TA0009": "Collection",
+            "TA0010": "Exfiltration",
+            "TA0011": "Command and Control",
+            "TA0040": "Impact",
+            "TA0042": "Resource Development",
+            "TA0043": "Reconnaissance",
+        }
 
-        # Use first tactic that matches allowed categories
-        for tactic in tactics:
-            # Remove spaces for comparison
-            tactic_normalized = tactic.replace(" ", "")
-            for allowed_cat in self.ALLOWED_CATEGORIES:
-                if tactic_normalized.lower() == allowed_cat.replace(" ", "").lower():
-                    return allowed_cat
+        # Find the first MITRE tactic tag and extract its ID
+        for tag in mitre_tags:
+            if tag.startswith("_mitreAttackTactic:"):
+                tactic_id = tag.split(":", 1)[1]  # Extract "TA0002" from "_mitreAttackTactic:TA0002"
+                return TACTIC_ID_TO_CATEGORY.get(tactic_id, self.DEFAULT_CATEGORY)
 
+        # No tactic tag found
         return self.DEFAULT_CATEGORY
 
 
@@ -541,6 +1257,10 @@ class SumoLogicCSERuleBackend(SumoLogicCSEBackend):
 
     def finalize_output_cse_rule(self, queries: List[Any]) -> Any:
         """
-        Output collected rules as JSON array or single JSON.
+        Output collected rules as JSON with rules wrapper.
         """
-        return queries
+        # Parse JSON strings back to objects
+        rule_objects = [json.loads(q) for q in queries]
+
+        # Wrap in rules structure and return as list
+        return [json.dumps({"rules": rule_objects}, indent=4, sort_keys=False)]
