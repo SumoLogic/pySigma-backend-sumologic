@@ -17,7 +17,7 @@ from sigma.processing.pipeline import ProcessingPipeline
 
 
 # Configuration
-SIGMA_REPO_PATH = Path(os.getenv("SIGMA_REPO_PATH", "/Users/jcrowley/Documents/GitHub/sigma"))
+SIGMA_REPO_PATH = Path(os.getenv("SIGMA_REPO_PATH", "./sigma-rules"))
 RULE_DIRS = ["rules", "rules-dfir", "rules-compliance", "rules-threat-hunting", "rules-emerging-threats", "rules-placeholder"]
 
 

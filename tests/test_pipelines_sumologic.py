@@ -172,12 +172,12 @@ def test_sumologic_cse_pipeline_proxy_mapping():
         """)
     )
 
-    # Verify field mapping occurred including anchor schema fields
+    # Verify field mapping occurred including CSE schema fields
     assert "http_url" in result[0]
     assert "http_method" in result[0]
     assert "http_response_statusCode" in result[0]
-    assert "bytesOut" in result[0]  # anchor schema field
-    assert "bytesIn" in result[0]  # anchor schema field
+    assert "bytesOut" in result[0]  # CSE schema field
+    assert "bytesIn" in result[0]  # CSE schema field
 
 
 def test_sumologic_cse_pipeline_hash_field_variations():

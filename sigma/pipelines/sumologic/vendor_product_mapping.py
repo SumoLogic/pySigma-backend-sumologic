@@ -14,7 +14,7 @@ class VendorProductMapper:
     """
     Maps Sigma logsource to CSE metadata_vendor and metadata_product.
 
-    Based on actual CSE parser analysis from /Users/jcrowley/git/sumo/sana/sana-test/csiem-parsers/
+    Based on CSE parser configuration analysis.
     """
 
     # Mapping: (product, service, category) → (vendor, product, parser_pattern_type)

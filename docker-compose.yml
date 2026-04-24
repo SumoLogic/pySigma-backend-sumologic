@@ -10,8 +10,8 @@ services:
       - "8501:8501"
     volumes:
       # Mount the sigma rules repository
-      # Update the path on the left side to your local sigma repo
-      - /Users/jcrowley/Documents/GitHub/sigma:/sigma-rules:ro
+      # Update the path below to your local sigma repo
+      - ./sigma-rules:/sigma-rules:ro
       # Mount local development code for live updates
       - ./sigma:/app/sigma
       - ./sigma_rule_browser.py:/app/sigma_rule_browser.py

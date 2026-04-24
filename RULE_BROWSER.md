@@ -35,7 +35,7 @@ poetry install
 1. Make sure the Sigma repository path is correct in `sigma_rule_browser.py`:
 
 ```python
-SIGMA_REPO_PATH = Path("/Users/jcrowley/Documents/GitHub/sigma")
+SIGMA_REPO_PATH = Path("./sigma-rules")  # Or set SIGMA_REPO_PATH environment variable
 ```
 
 2. Run the Streamlit app:
