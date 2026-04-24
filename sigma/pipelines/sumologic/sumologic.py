@@ -282,7 +282,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
     Processing pipeline for Sumo Logic Cloud SIEM (CSE).
 
     This pipeline transforms Sigma rules into Sumo Logic Cloud SIEM compatible queries by:
-    - Mapping Sigma field names to Cloud SIEM schema field names
+    - Mapping Sigma field names to CSIEM schema field names
     - Handling Windows event logs, Sysmon, security logs
     - Supporting process creation, network connection, DNS queries, file operations
     - Providing proper field mappings for authentication, user activity, and system events

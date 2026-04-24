@@ -4,11 +4,11 @@
 
 ## Overview
 
-This is the Sumo Logic backend for pySigma. It provides the package `sigma.backends.sumologic` with backend classes for converting Sigma rules into Sumo Logic Cloud SIEM (CSE) detection rules.
+This is the Sumo Logic backend for pySigma. It provides the package `sigma.backends.sumologic` with backend classes for converting Sigma rules into Sumo Logic Cloud SIEM (CSIEM) detection rules.
 
 The backend includes:
-- **`SumoLogicCSEBackend`**: Converts Sigma rules to Sumo Logic CSE queries
-- **`SumoLogicCSERuleBackend`**: Converts Sigma rules to complete CSE rule JSON format
+- **`SumoLogicCSEBackend`**: Converts Sigma rules to Sumo Logic Cloud SIEM queries
+- **`SumoLogicCSERuleBackend`**: Converts Sigma rules to complete CSIEM rule JSON format
 - **`sumologic_cse_pipeline`**: Processing pipeline with field mappings for common log sources
 
 ## Supported Log Sources
@@ -19,14 +19,14 @@ The backend includes field mappings for the following log sources:
 - **Network**: Connection events, DNS queries, proxy logs
 - **Cloud**: AWS CloudTrail events
 
-Field mappings align with Sumo Logic CSE's schema and [Anchor schema](https://github.com/SumoLogic/anchor-schema) where applicable.
+Field mappings align with Sumo Logic Cloud SIEM's normalized schema.
 
 ## Output Formats
 
 The backend supports two output formats:
 
-- **`default`**: Plain CSE query syntax (for manual rule creation)
-- **`cse_rule`**: Complete JSON rule format for CSE API import (includes metadata, severity, MITRE ATT&CK mapping)
+- **`default`**: Plain CSIEM query syntax (for manual rule creation)
+- **`cse_rule`**: Complete JSON rule format for Cloud SIEM API import (includes metadata, severity, MITRE ATT&CK mapping)
 
 ### Example Output
 
@@ -42,7 +42,7 @@ detection:
     condition: selection
 ```
 
-**Output (CSE rule format):**
+**Output (CSIEM rule format):**
 ```json
 {
   "name": "Suspicious PowerShell Execution",

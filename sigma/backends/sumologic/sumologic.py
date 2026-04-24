@@ -16,23 +16,23 @@ from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 class SumoLogicCSEBackend(TextQueryBackend):
     """
-    Sumo Logic Cloud SIEM (CSE) backend for converting Sigma rules to CSE Rule JSON format.
+    Sumo Logic Cloud SIEM backend for converting Sigma rules to CSIEM Rule JSON format.
 
-    This backend converts Sigma rules into Sumo Logic Cloud SIEM Rule JSON format with:
-    - CSE-compatible query expressions
+    This backend converts Sigma rules into Sumo Logic CSIEM Rule JSON format with:
+    - Cloud SIEM-compatible query expressions
     - MITRE ATT&CK technique and tactic mapping
     - Risk score calculation based on severity
     - Full rule metadata including name, description, and category
     """
 
-    name: ClassVar[str] = "Sumo Logic Cloud SIEM (CSE) Backend"
+    name: ClassVar[str] = "Sumo Logic Cloud SIEM Backend"
     formats: Dict[str, str] = {
-        "default": "Sumo Logic CSE Rule JSON format",
-        "cse_rule": "CSE Rule JSON with full metadata",
+        "default": "Sumo Logic CSIEM Rule JSON format",
+        "cse_rule": "CSIEM Rule JSON with full metadata",
     }
     requires_pipeline: bool = True
 
-    # CSE uses lowercase boolean operators
+    # Cloud SIEM uses uppercase boolean operators
     precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (
         ConditionNOT,
         ConditionAND,
@@ -40,7 +40,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
     )
     group_expression: ClassVar[str] = "({expr})"
 
-    # CSE Query tokens - uppercase for CSE
+    # Cloud SIEM Query tokens - uppercase operators
     token_separator: str = " "
     or_token: ClassVar[str] = "OR"
     and_token: ClassVar[str] = "AND"
@@ -492,8 +492,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
             import warnings
             logsource_str = f"product={rule.logsource.product}, service={getattr(rule.logsource, 'service', None)}, category={getattr(rule.logsource, 'category', None)}"
             warnings.warn(
-                f"No CSE parser mapping found for logsource: {logsource_str}. "
-                f"Rule may not match expected log sources in CSE."
+                f"No Cloud SIEM parser mapping found for logsource: {logsource_str}. "
+                f"Rule may not match expected log sources in Cloud SIEM."
             )
             return query
 
@@ -583,6 +583,61 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         return query
 
+    def _wrap_vendor_specific_fields(self, rule: SigmaRule, query: str) -> str:
+        """
+        Wrap vendor-specific fields in fields[] syntax based on logsource context.
+
+        Rules with specific product/service are vendor-specific and their unmapped fields
+        should use fields[] syntax. Rules with only category use normalized field names.
+
+        Args:
+            rule: Sigma rule object with logsource information
+            query: Generated CSE query expression
+
+        Returns:
+            Query with vendor-specific fields wrapped in fields[] syntax
+        """
+        if not rule.logsource:
+            return query
+
+        # Determine if this is a vendor-specific logsource
+        has_product = rule.logsource.product is not None
+        has_service = rule.logsource.service is not None
+        has_only_category = (
+            rule.logsource.category is not None
+            and not has_product
+            and not has_service
+        )
+
+        # Only process vendor-specific logsources (not generic categories)
+        if not (has_product or has_service) or has_only_category:
+            return query
+
+        # Find all bare field names (not already in fields[] syntax, not metadata fields)
+        # Pattern: field name at word boundary, followed by operator (=, in, matches, etc.)
+        # Exclude: metadata_, fields[, already wrapped fields
+        pattern = r'\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))'
+
+        def wrap_if_not_in_schema(match):
+            field_name = match.group(1)
+
+            # Don't wrap if field is in CSE schema
+            if self.schema and self.schema.field_exists(field_name):
+                return field_name
+
+            # Don't wrap boolean operators
+            if field_name.upper() in ('AND', 'OR', 'NOT'):
+                return field_name
+
+            # Don't wrap CSE functions
+            if field_name in ('isEmpty',):
+                return field_name
+
+            # Wrap vendor-specific field
+            return f"fields['{field_name}']"
+
+        return re.sub(pattern, wrap_if_not_in_schema, query)
+
     def finalize_query_default(
         self, rule: SigmaRule, query: str, index: int, state: ConversionState
     ) -> str:
@@ -622,6 +677,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Transform Windows metadata fields to fields[] syntax
         query = self._transform_windows_metadata_fields(rule, query)
+
+        # Wrap vendor-specific fields based on logsource context
+        query = self._wrap_vendor_specific_fields(rule, query)
 
         # Inject vendor/product metadata based on logsource
         query = self._inject_vendor_product_metadata(rule, query)
@@ -1237,19 +1295,19 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
 class SumoLogicCSERuleBackend(SumoLogicCSEBackend):
     """
-    Sumo Logic CSE Rule Backend that outputs complete JSON rules.
+    Sumo Logic Cloud SIEM Rule Backend that outputs complete JSON rules.
 
-    This backend extends SumoLogicCSEBackend to provide full CSE Rule JSON
-    output suitable for direct import via CSE API or UI.
+    This backend extends SumoLogicCSEBackend to provide full CSIEM Rule JSON
+    output suitable for direct import via Cloud SIEM API or UI.
     """
 
-    name: ClassVar[str] = "Sumo Logic CSE Rule JSON Backend"
+    name: ClassVar[str] = "Sumo Logic Cloud SIEM Rule JSON Backend"
 
     def finalize_query_cse_rule(
         self, rule: SigmaRule, query: str, index: int, state: ConversionState
     ) -> str:
         """
-        Finalize query as CSE Rule JSON for cse_rule format.
+        Finalize query as CSIEM Rule JSON for cse_rule format.
         """
         rule_json = self.create_rule_json(rule, query)
         self.rule_metadata.append(rule_json)
