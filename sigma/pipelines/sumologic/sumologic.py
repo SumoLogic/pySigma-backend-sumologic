@@ -27,7 +27,7 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
         self,
         mapping: Dict[str, str],
         logsource_category: str,
-        schema: Optional[SchemaIndex] = None
+        schema: Optional[SchemaIndex] = None,
     ):
         """
         Initialize confidence-aware field mapping.
@@ -48,7 +48,7 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
                 sigma_field=sigma_field,
                 cse_field=cse_field,
                 logsource_category=logsource_category,
-                schema=schema
+                schema=schema,
             )
             self.confidence_scores[sigma_field] = score
 
@@ -62,9 +62,8 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
         return {
             "logsource_category": self.logsource_category,
             "field_mappings": [
-                score.to_dict()
-                for score in self.confidence_scores.values()
-            ]
+                score.to_dict() for score in self.confidence_scores.values()
+            ],
         }
 
     def get_overall_confidence(self) -> float:
@@ -76,7 +75,9 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
         if not self.confidence_scores:
             return 1.0
 
-        total_confidence = sum(score.overall for score in self.confidence_scores.values())
+        total_confidence = sum(
+            score.overall for score in self.confidence_scores.values()
+        )
         return total_confidence / len(self.confidence_scores)
 
 
@@ -119,7 +120,11 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             return
 
         # Get detection values (handle both single values and lists)
-        values = detection_item.value if isinstance(detection_item.value, list) else [detection_item.value]
+        values = (
+            detection_item.value
+            if isinstance(detection_item.value, list)
+            else [detection_item.value]
+        )
 
         # Track which values can be transformed vs. which fail
         structured_patterns = []
@@ -127,18 +132,18 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
 
         for value in values:
             # Convert SigmaString to plain string for pattern matching
-            if hasattr(value, 'to_plain'):
+            if hasattr(value, "to_plain"):
                 value_str = value.to_plain()
             else:
                 value_str = str(value)
 
             # Strip wildcards added by |contains modifier (e.g., '*EngineVersion=2.*' → 'EngineVersion=2.')
             # This lets us detect structured patterns even when wrapped with wildcards
-            value_str_clean = value_str.strip('*')
+            value_str_clean = value_str.strip("*")
 
             # Try to parse structured patterns: FieldName=Value or FieldName:Value
             # Match word characters for field name, then = or :, then capture the rest
-            match = re.match(r'^(\w+)[:=](.+)$', value_str_clean)
+            match = re.match(r"^(\w+)[:=](.+)$", value_str_clean)
 
             if match:
                 field_name = match.group(1)
@@ -157,12 +162,16 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             error_msg += "Original Sigma detection:\n"
             error_msg += f"  Data|contains:\n"
             for value in values:
-                value_str = value.to_plain() if hasattr(value, 'to_plain') else str(value)
+                value_str = (
+                    value.to_plain() if hasattr(value, "to_plain") else str(value)
+                )
                 # Highlight unsupported values with ✗, supported with ✓
-                if value_str.strip('*') in [s.strip('*') for s in arbitrary_strings]:
+                if value_str.strip("*") in [s.strip("*") for s in arbitrary_strings]:
                     error_msg += f"    ✗ '{value_str.strip('*')}'  ← UNSUPPORTED (arbitrary string)\n"
                 else:
-                    error_msg += f"    ✓ '{value_str.strip('*')}'  ← OK (structured pattern)\n"
+                    error_msg += (
+                        f"    ✓ '{value_str.strip('*')}'  ← OK (structured pattern)\n"
+                    )
 
             error_msg += (
                 "\nReason: CSE parses Windows Event Log Data into structured EventData.* fields. "
@@ -179,7 +188,9 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
 
             error_msg += "Failed to convert:\n"
             for s in arbitrary_strings:
-                error_msg += f"  ✗ '{s.strip('*')}' - No field name found (arbitrary string)\n"
+                error_msg += (
+                    f"  ✗ '{s.strip('*')}' - No field name found (arbitrary string)\n"
+                )
 
             error_msg += (
                 "\nSupported patterns:\n"
@@ -209,13 +220,14 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
 
             # Update the value to just the value part (removing the field name prefix)
             # Need to preserve SigmaString structure with wildcards if present
-            if hasattr(original_value, 's'):
+            if hasattr(original_value, "s"):
                 # It's a SigmaString - reconstruct with just the value part
                 # The original structure is like: [SpecialChars.WILDCARD_MULTI, 'EngineVersion=2.', SpecialChars.WILDCARD_MULTI]
                 # We want: [SpecialChars.WILDCARD_MULTI, '2.', SpecialChars.WILDCARD_MULTI]
 
                 # Find the wildcards/special chars from original
                 from sigma.types import SpecialChars
+
                 original_parts = original_value.s
 
                 # Reconstruct with value part only, keeping wildcards
@@ -248,7 +260,11 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             error_msg += "Original Sigma detection:\n"
             error_msg += f"  Data|contains|all:\n"
             for field_name, field_value, original_value in structured_patterns:
-                value_str = original_value.to_plain() if hasattr(original_value, 'to_plain') else str(original_value)
+                value_str = (
+                    original_value.to_plain()
+                    if hasattr(original_value, "to_plain")
+                    else str(original_value)
+                )
                 error_msg += f"    - '{value_str.strip('*')}'  → Would convert to EventData.{field_name}\n"
 
             error_msg += (
@@ -330,7 +346,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "FileVersion": "file_version",
                     },
                     logsource_category="process_creation",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="process_creation")],
             ),
@@ -352,7 +368,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "SourceHostname": "srcDevice_hostname",
                     },
                     logsource_category="network_connection",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="network_connection")],
             ),
@@ -369,7 +385,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "record_type": "dns_queryType",
                     },
                     logsource_category="dns_query",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="dns_query")],
             ),
@@ -387,7 +403,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "sha256": "file_hash_sha256",
                     },
                     logsource_category="file_event",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="file_event")],
             ),
@@ -406,7 +422,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "sha256": "file_hash_sha256",
                     },
                     logsource_category="image_load",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="image_load")],
             ),
@@ -422,7 +438,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "User": "user_username",
                     },
                     logsource_category="registry_event",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="registry_event")],
             ),
@@ -446,7 +462,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "AuthenticationPackageName": "authProvider",
                     },
                     logsource_category="authentication",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="windows", service="security")
@@ -463,7 +479,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "StartType": "changeType",
                     },
                     logsource_category="windows_system",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="windows", service="system")
@@ -480,7 +496,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "ContextInfo": "description",
                     },
                     logsource_category="windows_powershell",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="windows", service="powershell")
@@ -505,7 +521,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "url": "http_url",
                     },
                     logsource_category="proxy",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="proxy")],
             ),
@@ -522,7 +538,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "action": "action",
                     },
                     logsource_category="firewall",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(category="firewall")],
             ),
@@ -543,7 +559,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "responseElements.instanceId": "resourceId",
                     },
                     logsource_category="aws_cloudtrail",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="aws", service="cloudtrail")
@@ -562,7 +578,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "properties.message": "description",
                     },
                     logsource_category="azure_activitylogs",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="azure", service="activitylogs")
@@ -580,7 +596,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "ObjectId": "resourceId",
                     },
                     logsource_category="office365",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(service="office365")],
             ),
@@ -595,7 +611,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "addr": "srcDevice_ip",
                     },
                     logsource_category="linux_auth",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[LogsourceCondition(product="linux", service="auth")],
             ),
@@ -636,11 +652,9 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "UtcTime": "fields.EventData.UtcTime",
                     },
                     logsource_category="windows_eventdata",
-                    schema=schema
+                    schema=schema,
                 ),
-                rule_conditions=[
-                    LogsourceCondition(product="windows")
-                ],
+                rule_conditions=[LogsourceCondition(product="windows")],
             ),
             # Windows Sysmon - All events (common fields + event-specific fields)
             ProcessingItem(
@@ -700,7 +714,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "Device": "changeTarget",
                     },
                     logsource_category="sysmon",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="windows", service="sysmon")
@@ -739,7 +753,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "RemoteUserID": "fields.EventData.RemoteUserID",
                     },
                     logsource_category="security",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="windows", service="security")
@@ -765,7 +779,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "RunspaceId": "fields.EventData.RunspaceId",
                     },
                     logsource_category="powershell",
-                    schema=schema
+                    schema=schema,
                 ),
                 rule_conditions=[
                     LogsourceCondition(product="windows", service="powershell")
@@ -812,16 +826,14 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "Status": "normalizedAction",
                     },
                     logsource_category="generic",
-                    schema=schema
+                    schema=schema,
                 ),
             ),
             # Smart handling of "Data" field - transforms structured patterns, blocks arbitrary strings
             ProcessingItem(
                 identifier="sumologic_cse_transform_data_field",
                 transformation=DataFieldTransformation(),
-                field_name_conditions=[
-                    IncludeFieldCondition(fields=["Data"])
-                ],
+                field_name_conditions=[IncludeFieldCondition(fields=["Data"])],
             ),
         ],
     )

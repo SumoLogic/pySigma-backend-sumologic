@@ -26,28 +26,46 @@ class VendorProductMapper:
         ("windows", "system", None): ("Microsoft", "Windows", "concatenation"),
         ("windows", "application", None): ("Microsoft", "Windows", "concatenation"),
         ("windows", "powershell", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "powershell-classic", None): ("Microsoft", "Windows", "concatenation"),
+        ("windows", "powershell-classic", None): (
+            "Microsoft",
+            "Windows",
+            "concatenation",
+        ),
         ("windows", "taskscheduler", None): ("Microsoft", "Windows", "concatenation"),
         ("windows", "wmi", None): ("Microsoft", "Windows", "concatenation"),
         ("windows", "dns-server", None): ("Microsoft", "Windows", "concatenation"),
         ("windows", "firewall-as", None): ("Microsoft", "Windows", "concatenation"),
         ("windows", "windefend", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "driver-framework", None): ("Microsoft", "Windows", "concatenation"),
-
+        ("windows", "driver-framework", None): (
+            "Microsoft",
+            "Windows",
+            "concatenation",
+        ),
         # Windows by category (when service not specified)
-        ("windows", None, "process_creation"): ("Microsoft", "Windows", "concatenation"),
-        ("windows", None, "network_connection"): ("Microsoft", "Windows", "concatenation"),
+        ("windows", None, "process_creation"): (
+            "Microsoft",
+            "Windows",
+            "concatenation",
+        ),
+        ("windows", None, "network_connection"): (
+            "Microsoft",
+            "Windows",
+            "concatenation",
+        ),
         ("windows", None, "dns_query"): ("Microsoft", "Windows", "concatenation"),
         ("windows", None, "file_event"): ("Microsoft", "Windows", "concatenation"),
         ("windows", None, "registry_event"): ("Microsoft", "Windows", "concatenation"),
         ("windows", None, "image_load"): ("Microsoft", "Windows", "concatenation"),
-
         # ===== AWS =====
         ("aws", "cloudtrail", None): ("Amazon AWS", "CloudTrail", "concatenation"),
         ("aws", "s3", None): ("Amazon AWS", "AWS S3 Server Access Logs", "simple"),
         ("aws", "guardduty", None): ("Amazon AWS", "GuardDuty", "simple"),
         ("aws", "vpc", None): ("Amazon AWS", "VpcFlowLogs", "simple"),
-        ("aws", "waf", None): ("Amazon AWS", "Web Application Firewall (WAF)", "simple"),
+        ("aws", "waf", None): (
+            "Amazon AWS",
+            "Web Application Firewall (WAF)",
+            "simple",
+        ),
         ("aws", "route53", None): ("Amazon AWS", "Route53", "simple"),
         ("aws", "config", None): ("Amazon AWS", "Config", "simple"),
         ("aws", "eks", None): ("Amazon AWS", "EKS", "simple"),
@@ -62,25 +80,25 @@ class VendorProductMapper:
         ("aws", "redshift", None): ("Amazon AWS", "Redshift", "simple"),
         ("aws", "vpn", None): ("Amazon AWS", "VPN", "simple"),
         ("aws", "trustedadvisor", None): ("Amazon AWS", "Trusted Advisor", "simple"),
-
         # ===== AZURE =====
         ("azure", "signinlogs", None): ("Microsoft", "Azure", "constant"),
         ("azure", "auditlogs", None): ("Microsoft", "Azure", "constant"),
         ("azure", "activitylogs", None): ("Microsoft", "Azure", "simple"),
         ("azure", "azuread", None): ("Microsoft", "Azure", "simple"),
         ("azure", "firewall", None): ("Microsoft", "Azure", "constant"),
-
         # ===== GCP =====
         ("gcp", "audit", None): ("Google", "Google Cloud Platform", "transform"),
         ("gcp", "gce", None): ("Google", "Google Cloud Platform", "transform"),
         ("gcp", "gcs", None): ("Google", "Google Cloud Platform", "simple"),
         ("gcp", "bigquery", None): ("Google", "BigQuery", "simple"),
-        ("gcp", "securitycenter", None): ("Google", "Security Command Center", "simple"),
-
+        ("gcp", "securitycenter", None): (
+            "Google",
+            "Security Command Center",
+            "simple",
+        ),
         # ===== GOOGLE WORKSPACE =====
         ("gsuite", None, None): ("Google", "Google Workspace", "simple"),
         ("google_workspace", None, None): ("Google", "Google Workspace", "simple"),
-
         # ===== LINUX =====
         ("linux", "syslog", None): ("Linux", "Linux OS Syslog", "simple"),
         ("linux", "auditd", None): ("Linux", "Auditd", "simple"),
@@ -88,13 +106,20 @@ class VendorProductMapper:
         ("linux", "auth", None): ("Linux", "Secure", "simple"),
         ("linux", "sysmon", None): ("Linux", "Sysmon for Linux", "simple"),
         ("linux", "systemd", None): ("Linux", "Systemd Journal", "simple"),
-
         # ===== NETWORK DEVICES =====
         # Cisco
-        ("cisco", "aaa", None): ("Cisco Systems", "Secure Access Control Server (ACS)", "simple"),
+        ("cisco", "aaa", None): (
+            "Cisco Systems",
+            "Secure Access Control Server (ACS)",
+            "simple",
+        ),
         ("cisco", "asa", None): ("Cisco Systems", "ASA", "simple"),
         ("cisco", "ios", None): ("Cisco Systems", "Router and Switch IOS", "simple"),
-        ("cisco", "amp", None): ("Cisco Systems", "Advanced Malware Protection (AMP)", "simple"),
+        ("cisco", "amp", None): (
+            "Cisco Systems",
+            "Advanced Malware Protection (AMP)",
+            "simple",
+        ),
         ("cisco", "firepower", None): ("Cisco Systems", "Firepower", "simple"),
         ("cisco", "ise", None): ("Cisco Systems", "Identity Services Engine", "simple"),
         ("cisco", "ironport", None): ("Cisco Systems", "Ironport", "simple"),
@@ -103,23 +128,43 @@ class VendorProductMapper:
         ("cisco", "umbrella", None): ("Cisco Systems", "Umbrella", "simple"),
         ("cisco", "anyconnect", None): ("Cisco Systems", "AnyConnect", "simple"),
         ("cisco", "secureemail", None): ("Cisco Systems", "Secure Email", "simple"),
-
         # Palo Alto Networks
-        ("paloaltonetworks", "threat", None): ("Palo Alto Networks", "Next Generation Firewall", "simple"),
-        ("paloaltonetworks", "traffic", None): ("Palo Alto Networks", "Next Generation Firewall", "simple"),
-        ("paloaltonetworks", "firewall", None): ("Palo Alto Networks", "Next Generation Firewall", "simple"),
-        ("paloaltonetworks", "cortex", None): ("Palo Alto Networks", "Cortex XDR", "simple"),
-        ("paloaltonetworks", "globalprotect", None): ("Palo Alto Networks", "GlobalProtect", "simple"),
-        ("paloaltonetworks", "prismacloud", None): ("Palo Alto Networks", "Prisma Cloud", "simple"),
+        ("paloaltonetworks", "threat", None): (
+            "Palo Alto Networks",
+            "Next Generation Firewall",
+            "simple",
+        ),
+        ("paloaltonetworks", "traffic", None): (
+            "Palo Alto Networks",
+            "Next Generation Firewall",
+            "simple",
+        ),
+        ("paloaltonetworks", "firewall", None): (
+            "Palo Alto Networks",
+            "Next Generation Firewall",
+            "simple",
+        ),
+        ("paloaltonetworks", "cortex", None): (
+            "Palo Alto Networks",
+            "Cortex XDR",
+            "simple",
+        ),
+        ("paloaltonetworks", "globalprotect", None): (
+            "Palo Alto Networks",
+            "GlobalProtect",
+            "simple",
+        ),
+        ("paloaltonetworks", "prismacloud", None): (
+            "Palo Alto Networks",
+            "Prisma Cloud",
+            "simple",
+        ),
         ("paloaltonetworks", "traps", None): ("Palo Alto Networks", "Traps", "simple"),
-
         # Fortinet
         ("fortinet", "fortigate", None): ("Fortinet", "Fortigate", "simple"),
         ("fortinet", "forticlient", None): ("Fortinet", "Forticlient", "simple"),
-
         # Check Point
         ("checkpoint", "firewall", None): ("Check Point", "Firewall", "simple"),
-
         # ===== APPLICATIONS =====
         ("okta", None, None): ("Okta", "Single Sign-On", "simple"),
         ("onelogin", None, None): ("OneLogin", "OneLogin", "simple"),
@@ -127,13 +172,10 @@ class VendorProductMapper:
         ("m365", None, None): ("Microsoft", "Office 365", "simple"),
         ("office365", None, None): ("Microsoft", "Office 365", "simple"),
         ("exchange", None, None): ("Microsoft", "Exchange", "simple"),
-
         # ===== MACOS =====
         ("macos", None, None): ("Apple", "macOS", "simple"),
-
         # ===== KUBERNETES =====
         ("kubernetes", "audit", None): ("Kubernetes", "Audit", "simple"),
-
         # ===== GENERIC CATEGORIES (when product not specified) =====
         # These are fallbacks when only category is specified
         (None, None, "proxy"): ("Generic", "Proxy", "simple"),
@@ -147,7 +189,7 @@ class VendorProductMapper:
         cls,
         product: Optional[str],
         service: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
     ) -> Optional[Tuple[str, str, str]]:
         """
         Get CSE vendor, product, and pattern type for a Sigma logsource.
@@ -203,7 +245,7 @@ class VendorProductMapper:
         cls,
         product: Optional[str],
         service: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
     ) -> bool:
         """
         Check if a CSE parser exists for this Sigma logsource.

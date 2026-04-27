@@ -17,10 +17,13 @@ def test_sumologic_cse_pipeline_initialization():
 
 def test_sumologic_cse_pipeline_process_creation_mapping():
     """Test process creation field mappings"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Process Creation Field Mapping Test
             id: 00000000-0000-0000-0001-000000000001
             status: test
@@ -35,7 +38,8 @@ def test_sumologic_cse_pipeline_process_creation_mapping():
                     ProcessId: "1234"
                     User: "SYSTEM"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred
@@ -48,10 +52,13 @@ def test_sumologic_cse_pipeline_process_creation_mapping():
 
 def test_sumologic_cse_pipeline_network_connection_mapping():
     """Test network connection field mappings"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Network Connection Field Mapping Test
             id: 00000000-0000-0000-0001-000000000002
             status: test
@@ -65,7 +72,8 @@ def test_sumologic_cse_pipeline_network_connection_mapping():
                     SourcePort: 12345
                     DestinationPort: 443
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred
@@ -77,10 +85,13 @@ def test_sumologic_cse_pipeline_network_connection_mapping():
 
 def test_sumologic_cse_pipeline_dns_query_mapping():
     """Test DNS query field mappings"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: DNS Query Field Mapping Test
             id: 00000000-0000-0000-0001-000000000003
             status: test
@@ -92,7 +103,8 @@ def test_sumologic_cse_pipeline_dns_query_mapping():
                     QueryName: "malicious.com"
                     QueryResults: "1.2.3.4"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred
@@ -102,10 +114,13 @@ def test_sumologic_cse_pipeline_dns_query_mapping():
 
 def test_sumologic_cse_pipeline_file_event_mapping():
     """Test file event field mappings"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: File Event Field Mapping Test
             id: 00000000-0000-0000-0001-000000000004
             status: test
@@ -117,7 +132,8 @@ def test_sumologic_cse_pipeline_file_event_mapping():
                     TargetFilename: "C:\\\\malicious.exe"
                     md5: "abc123"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred
@@ -127,10 +143,13 @@ def test_sumologic_cse_pipeline_file_event_mapping():
 
 def test_sumologic_cse_pipeline_registry_event_mapping():
     """Test registry event field mappings"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Registry Event Field Mapping Test
             id: 00000000-0000-0000-0001-000000000005
             status: test
@@ -142,7 +161,8 @@ def test_sumologic_cse_pipeline_registry_event_mapping():
                     TargetObject: "HKLM\\\\Software\\\\Test"
                     Details: "malicious"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred
@@ -152,10 +172,13 @@ def test_sumologic_cse_pipeline_registry_event_mapping():
 
 def test_sumologic_cse_pipeline_proxy_mapping():
     """Test proxy/web log field mappings including bytesIn/bytesOut"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Proxy Field Mapping Test
             id: 00000000-0000-0000-0001-000000000006
             status: test
@@ -169,7 +192,8 @@ def test_sumologic_cse_pipeline_proxy_mapping():
                     cs-bytes: 1024
                     sc-bytes: 2048
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred including CSE schema fields
@@ -182,10 +206,13 @@ def test_sumologic_cse_pipeline_proxy_mapping():
 
 def test_sumologic_cse_pipeline_hash_field_variations():
     """Test that various hash field names map correctly"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Hash Field Variations Test
             id: 00000000-0000-0000-0001-000000000007
             status: test
@@ -198,7 +225,8 @@ def test_sumologic_cse_pipeline_hash_field_variations():
                     md5: "abc123"
                     SHA256: "def456"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify both lowercase and uppercase hash fields map correctly
@@ -208,10 +236,13 @@ def test_sumologic_cse_pipeline_hash_field_variations():
 
 def test_sumologic_cse_pipeline_user_field_variations():
     """Test that various user field names map correctly"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: User Field Variations Test
             id: 00000000-0000-0000-0001-000000000008
             status: test
@@ -223,7 +254,8 @@ def test_sumologic_cse_pipeline_user_field_variations():
                     Image: "test.exe"
                     User: "admin"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify user field maps correctly
@@ -232,10 +264,13 @@ def test_sumologic_cse_pipeline_user_field_variations():
 
 def test_sumologic_cse_pipeline_aws_cloudtrail_mapping():
     """Test AWS CloudTrail field mappings"""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: AWS CloudTrail Field Mapping Test
             id: 00000000-0000-0000-0001-000000000009
             status: test
@@ -247,7 +282,8 @@ def test_sumologic_cse_pipeline_aws_cloudtrail_mapping():
                     eventName: "ConsoleLogin"
                     sourceIPAddress: "1.2.3.4"
                 condition: sel
-        """)
+        """
+        )
     )
 
     # Verify field mapping occurred
@@ -280,7 +316,9 @@ def test_data_field_blocked():
 
     # Rule using Data field with arbitrary string should fail
     with pytest.raises(SigmaTransformationError) as exc_info:
-        backend.convert(SigmaCollection.from_yaml("""
+        backend.convert(
+            SigmaCollection.from_yaml(
+                """
             title: Test Data Field Block
             id: 00000000-0000-0000-0000-000000000001
             status: test
@@ -291,7 +329,9 @@ def test_data_field_blocked():
                 selection:
                     Data|contains: 'Net.WebClient'
                 condition: selection
-        """))
+        """
+            )
+        )
 
     # Verify error message is helpful and shows context
     error_msg = str(exc_info.value)
@@ -305,9 +345,13 @@ def test_data_field_blocked():
 
 def test_data_field_structured_key_value():
     """Test that Data field with key=value patterns gets transformed to EventData fields."""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
-    result = backend.convert(SigmaCollection.from_yaml("""
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            """
         title: Test Data Field Key=Value Transform
         id: 00000000-0000-0000-0000-000000000002
         status: test
@@ -318,17 +362,26 @@ def test_data_field_structured_key_value():
             selection:
                 Data|contains: 'EngineVersion=2.'
             condition: selection
-    """))
+    """
+        )
+    )
 
     # Should convert successfully and map to EventData.EngineVersion
-    assert "EventData.EngineVersion" in result[0] or "fields['EventData.EngineVersion']" in result[0]
+    assert (
+        "EventData.EngineVersion" in result[0]
+        or "fields['EventData.EngineVersion']" in result[0]
+    )
 
 
 def test_data_field_structured_key_colon_value():
     """Test that Data field with key:value patterns gets transformed to EventData fields."""
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
-    result = backend.convert(SigmaCollection.from_yaml("""
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            """
         title: Test Data Field Key:Value Transform
         id: 00000000-0000-0000-0000-000000000003
         status: test
@@ -339,10 +392,15 @@ def test_data_field_structured_key_colon_value():
             selection:
                 Data|contains: 'statement:DROP TABLE'
             condition: selection
-    """))
+    """
+        )
+    )
 
     # Should convert successfully and map to EventData.statement
-    assert "EventData.statement" in result[0] or "fields['EventData.statement']" in result[0]
+    assert (
+        "EventData.statement" in result[0]
+        or "fields['EventData.statement']" in result[0]
+    )
 
 
 def test_data_field_mixed_patterns():
@@ -353,7 +411,9 @@ def test_data_field_mixed_patterns():
 
     # Rule with mix of structured and arbitrary patterns
     with pytest.raises(SigmaTransformationError) as exc_info:
-        backend.convert(SigmaCollection.from_yaml("""
+        backend.convert(
+            SigmaCollection.from_yaml(
+                """
             title: Test Mixed Patterns
             id: 00000000-0000-0000-0000-000000000004
             status: test
@@ -366,7 +426,9 @@ def test_data_field_mixed_patterns():
                         - 'EngineVersion=2.'
                         - 'Net.WebClient'
                 condition: selection
-        """))
+        """
+            )
+        )
 
     error_msg = str(exc_info.value)
     # Should show both patterns with appropriate markers
@@ -382,9 +444,13 @@ def test_eventdata_fields_work():
     """Test that specific EventData fields are properly mapped."""
     import json
 
-    backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
 
-    result = backend.convert(SigmaCollection.from_yaml("""
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            """
         title: Test EventData Fields
         id: 00000000-0000-0000-0000-000000000001
         status: test
@@ -397,11 +463,13 @@ def test_eventdata_fields_work():
                 LogonType: '3'
                 TargetUserName: 'Administrator'
             condition: selection
-    """))
-    
+    """
+        )
+    )
+
     parsed = json.loads(result[0])
     expr = parsed["rules"][0]["expression"]
-    
+
     # Verify EventData fields are mapped correctly
-    assert "logonType=\"3\"" in expr  # LogonType → logonType (via common Windows mapping)
-    assert "user_username=\"Administrator\"" in expr  # TargetUserName → user_username
+    assert 'logonType="3"' in expr  # LogonType → logonType (via common Windows mapping)
+    assert 'user_username="Administrator"' in expr  # TargetUserName → user_username
