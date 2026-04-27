@@ -10,7 +10,7 @@ from sigma.processing.conditions import (
     ExcludeFieldCondition,
 )
 from sigma.processing.pipeline import ProcessingItem, ProcessingPipeline
-from typing import Dict, Any, Optional
+from typing import Dict, Any, Optional, cast
 from .schema_loader import SchemaIndex, SchemaLoader
 from .confidence import compute_confidence, ConfidenceScore
 
@@ -37,7 +37,7 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
             logsource_category: Sigma logsource category (e.g., "process_creation")
             schema: CSE schema index for validation (None if schema not loaded)
         """
-        super().__init__(mapping)
+        super().__init__(cast(Dict[str | None, str | list[str]], mapping))
         self.logsource_category = logsource_category
         self.schema = schema
 

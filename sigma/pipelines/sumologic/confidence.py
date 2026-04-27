@@ -232,7 +232,7 @@ def compute_data_preservation(
         Data preservation score 0.0-1.0
     """
     score = 1.0
-    warnings = []
+    warnings: list[str] = []
 
     # Check for multi-value collapse
     if sigma_field in MULTI_VALUE_FIELDS:

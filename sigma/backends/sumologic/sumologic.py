@@ -26,14 +26,14 @@ class SumoLogicCSEBackend(TextQueryBackend):
     """
 
     name: ClassVar[str] = "Sumo Logic Cloud SIEM Backend"
-    formats: Dict[str, str] = {
+    formats: Dict[str, str] = {  # type: ignore[misc]
         "default": "Sumo Logic CSIEM Rule JSON format",
         "cse_rule": "CSIEM Rule JSON with full metadata",
     }
-    requires_pipeline: bool = True
+    requires_pipeline: bool = True  # type: ignore[misc]
 
     # Cloud SIEM uses uppercase boolean operators
-    precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (
+    precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (  # type: ignore[assignment]
         ConditionNOT,
         ConditionAND,
         ConditionOR,
@@ -64,7 +64,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
     wildcard_single: ClassVar[str] = "*"
     add_escaped: ClassVar[str] = ""  # Don't add extra escaping
     filter_chars: ClassVar[str] = ""
-    bool_values: ClassVar[Dict[bool, str]] = {
+    bool_values: ClassVar[Dict[bool, str]] = {  # type: ignore[assignment]
         True: "true",
         False: "false",
     }
@@ -79,7 +79,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
     # Must escape / (delimiter), and common regex metacharacters when used as literals
     re_expression: ClassVar[str] = "{field} matches /{regex}/"
     re_escape_char: ClassVar[str] = "\\"
-    re_escape: ClassVar[Tuple[str, ...]] = ("/", ".")
+    re_escape: ClassVar[Tuple[str, ...]] = ("/", ".")  # type: ignore[assignment]
     re_escape_escape_char: bool = True
     re_flag_prefix: bool = False  # CSE doesn't use flag prefixes in regex
     re_flags: Dict[SigmaRegularExpressionFlag, str] = {
@@ -88,7 +88,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     # Numeric comparison operators
     compare_op_expression: ClassVar[str] = "{field} {operator} {value}"
-    compare_operators: ClassVar[Dict[SigmaCompareExpression.CompareOperators, str]] = {
+    compare_operators: ClassVar[Dict[SigmaCompareExpression.CompareOperators, str]] = {  # type: ignore[valid-type]
         SigmaCompareExpression.CompareOperators.LT: "<",
         SigmaCompareExpression.CompareOperators.LTE: "<=",
         SigmaCompareExpression.CompareOperators.GT: ">",
@@ -139,7 +139,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
-        self.rule_metadata = []
+        self.rule_metadata: List[Dict[str, Any]] = []
         self.min_confidence = min_confidence
         self.schema_path = schema_path
         self.include_confidence_metadata = include_confidence_metadata
@@ -224,7 +224,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         if not isinstance(cond, ConditionFieldEqualsValueExpression):
             # Fallback to parent implementation
-            return super().convert_condition_field_eq_val_num(cond, state)
+            return super().convert_condition_field_eq_val_num(cond, state)  # type: ignore[return-value]
 
         field_name = cond.field
         numeric_value = cond.value.to_plain()
@@ -253,7 +253,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         from typing import Union, cast
 
         if not all(isinstance(arg, ConditionFieldEqualsValueExpression) for arg in cond.args):
-            return super().convert_condition_as_in_expression(cond, state)
+            return super().convert_condition_as_in_expression(cond, state)  # type: ignore[return-value]
 
         field_name = cast(ConditionFieldEqualsValueExpression, cond.args[0]).field
 
@@ -1165,7 +1165,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         Returns:
             List of entity selector dictionaries (empty if cannot determine confidently)
         """
-        entity_selectors = []
+        entity_selectors: List[Dict[str, Any]] = []
 
         if not logsource:
             return entity_selectors
