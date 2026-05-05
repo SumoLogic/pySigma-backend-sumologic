@@ -313,8 +313,8 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "OriginalFileName": "file_basename",
                         # User fields
                         "User": "user_username",
-                        "LogonId": "user_userId",
-                        "IntegrityLevel": "normalizedSeverity",
+                        "LogonId": "sessionId",
+                        "IntegrityLevel": "severity",
                         # Hash fields
                         "md5": "file_hash_md5",
                         "MD5": "file_hash_md5",
@@ -323,11 +323,11 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "sha256": "file_hash_sha256",
                         "SHA256": "file_hash_sha256",
                         "Hashes": "file_hash_sha256",
+                        "imphash": "file_hash_imphash",
+                        # Process GUID
+                        "ProcessGuid": "processUid",
                         # File metadata
-                        "Company": "file_company",
-                        "Product": "file_product",
                         "Description": "description",
-                        "FileVersion": "file_version",
                     },
                     logsource_category="process_creation",
                     schema=schema
@@ -373,6 +373,20 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                 ),
                 rule_conditions=[LogsourceCondition(category="dns_query")],
             ),
+            # Generic DNS (category: dns) - for cross-platform DNS rules
+            ProcessingItem(
+                identifier="sumologic_cse_dns",
+                transformation=ConfidenceAwareFieldMapping(
+                    mapping={
+                        "query": "dns_query",
+                        "record_type": "dns_queryType",
+                        "rcode": "dns_replyCode",
+                    },
+                    logsource_category="dns",
+                    schema=schema
+                ),
+                rule_conditions=[LogsourceCondition(category="dns")],
+            ),
             # File Creation/Modification (Sysmon Event ID 11, 23)
             ProcessingItem(
                 identifier="sumologic_cse_file_event",
@@ -397,13 +411,12 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                 transformation=ConfidenceAwareFieldMapping(
                     mapping={
                         "ImageLoaded": "file_path",
-                        "Signature": "file_signature",
-                        "SignatureStatus": "file_signatureStatus",
-                        "Signed": "file_signatureStatus",
+                        "Signature": "threat_identifier",
                         "Image": "baseImage",
                         "md5": "file_hash_md5",
                         "sha1": "file_hash_sha1",
                         "sha256": "file_hash_sha256",
+                        "imphash": "file_hash_imphash",
                     },
                     logsource_category="image_load",
                     schema=schema
@@ -416,7 +429,6 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                 transformation=ConfidenceAwareFieldMapping(
                     mapping={
                         "TargetObject": "changeTarget",
-                        "Details": "changeResult",
                         "EventType": "changeType",
                         "Image": "baseImage",
                         "User": "user_username",
@@ -539,8 +551,6 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "userAgent": "http_userAgent",
                         "errorCode": "errorCode",
                         "errorMessage": "errorText",
-                        "requestParameters.instanceId": "resourceId",
-                        "responseElements.instanceId": "resourceId",
                     },
                     logsource_category="aws_cloudtrail",
                     schema=schema
@@ -557,8 +567,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "operationName": "action",
                         "caller": "user_username",
                         "callerIpAddress": "srcDevice_ip",
-                        "resourceId": "resourceId",
-                        "status": "normalizedAction",
+                        "status": "action",
                         "properties.message": "description",
                     },
                     logsource_category="azure_activitylogs",
@@ -577,7 +586,6 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "UserId": "user_username",
                         "ClientIP": "srcDevice_ip",
                         "UserAgent": "http_userAgent",
-                        "ObjectId": "resourceId",
                     },
                     logsource_category="office365",
                     schema=schema
@@ -614,7 +622,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "SubjectDomainName": "user_authDomain",
                         # Process identification
                         "ProcessId": "pid",
-                        "ProcessGuid": "fields.EventData.ProcessGuid",
+                        "ProcessGuid": "processUid",
                         # Network fields
                         "IpAddress": "srcDevice_ip",
                         "IpPort": "srcPort",
@@ -650,13 +658,13 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         # Process Creation (Event ID 1)
                         "CommandLine": "commandLine",
                         "ParentImage": "parentBaseImage",
-                        "ParentProcessId": "fields.EventData.ParentProcessId",
+                        "ParentProcessId": "parentPid",
                         "ParentCommandLine": "parentCommandLine",
                         "ParentProcessGuid": "fields.EventData.ParentProcessGuid",
                         "CurrentDirectory": "fields.EventData.CurrentDirectory",
-                        "IntegrityLevel": "fields.EventData.IntegrityLevel",
-                        "LogonGuid": "fields.EventData.LogonGuid",
-                        "LogonId": "fields.EventData.LogonId",
+                        "IntegrityLevel": "severity",
+                        "LogonGuid": "sessionId",
+                        "LogonId": "sessionId",
                         "TerminalSessionId": "fields.EventData.TerminalSessionId",
                         "Hashes": "fields.EventData.Hashes",
                         # Network Connection (Event ID 3)
@@ -676,7 +684,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         # Image/Driver Load (Event ID 6, 7)
                         "ImageLoaded": "file_path",
                         "Signed": "fields.EventData.Signed",
-                        "Signature": "fields.EventData.Signature",
+                        "Signature": "threat_identifier",
                         "SignatureStatus": "fields.EventData.SignatureStatus",
                         # Registry Events (Event ID 12, 13, 14)
                         "EventType": "changeType",
@@ -809,7 +817,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "SourcePort": "srcPort",
                         # Action/Status
                         "Action": "action",
-                        "Status": "normalizedAction",
+                        "Status": "action",
                     },
                     logsource_category="generic",
                     schema=schema

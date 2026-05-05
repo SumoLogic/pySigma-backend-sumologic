@@ -497,7 +497,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
             )
             return query
 
-        vendor, product, pattern_type = mapping
+        vendor, product, pattern_type, classification = mapping
+
+        # Skip "Generic" vendor/product metadata - these are fallback categories
+        # not actual vendor/product filters in Cloud SIEM
+        if vendor == "Generic":
+            return query
 
         # Prepend vendor/product filters to the query
         metadata_filter = f'metadata_vendor="{vendor}" AND metadata_product="{product}"'
@@ -590,9 +595,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
         Rules with specific product/service are vendor-specific and their unmapped fields
         should use fields[] syntax. Rules with only category use normalized field names.
 
+        For Windows logsources, unmapped fields are automatically prefixed with EventData.
+        to match Cloud SIEM's structure (e.g., TargetImage → EventData.TargetImage).
+
         Args:
             rule: Sigma rule object with logsource information
-            query: Generated CSE query expression
+            query: Generated CSIEM query expression
 
         Returns:
             Query with vendor-specific fields wrapped in fields[] syntax
@@ -613,15 +621,29 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if not (has_product or has_service) or has_only_category:
             return query
 
+        # Check if this is a Windows logsource
+        is_windows = (
+            rule.logsource.product and
+            rule.logsource.product.lower() == 'windows'
+        )
+
+        # Windows Event Log header/system fields that should NOT get EventData. prefix
+        # These appear before the EventData body in Windows Event Logs
+        WINDOWS_HEADER_FIELDS = {
+            'Channel', 'Computer', 'EventID', 'EventRecordID',
+            'Execution', 'Keywords', 'Level', 'Opcode',
+            'Provider', 'Security', 'Task', 'TimeCreated', 'Version'
+        }
+
         # Find all bare field names (not already in fields[] syntax, not metadata fields)
         # Pattern: field name at word boundary, followed by operator (=, in, matches, etc.)
         # Exclude: metadata_, fields[, already wrapped fields
-        pattern = r'\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))'
+        pattern = r'\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_\.]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))'
 
         def wrap_if_not_in_schema(match):
             field_name = match.group(1)
 
-            # Don't wrap if field is in CSE schema
+            # Don't wrap if field is in CSIEM schema
             if self.schema and self.schema.field_exists(field_name):
                 return field_name
 
@@ -629,11 +651,22 @@ class SumoLogicCSEBackend(TextQueryBackend):
             if field_name.upper() in ('AND', 'OR', 'NOT'):
                 return field_name
 
-            # Don't wrap CSE functions
+            # Don't wrap CSIEM functions
             if field_name in ('isEmpty',):
                 return field_name
 
-            # Wrap vendor-specific field
+            # For Windows logsources, check if it's a header field
+            if is_windows:
+                # Check if this is a Windows header field (base name or dotted like Provider.Name)
+                base_field = field_name.split('.')[0]
+                if base_field in WINDOWS_HEADER_FIELDS:
+                    # Windows header field - wrap as-is without EventData prefix
+                    return f"fields['{field_name}']"
+                else:
+                    # Windows EventData field - prefix with EventData.
+                    return f"fields['EventData.{field_name}']"
+
+            # For other vendors, just wrap the field name
             return f"fields['{field_name}']"
 
         return re.sub(pattern, wrap_if_not_in_schema, query)
@@ -671,6 +704,19 @@ class SumoLogicCSEBackend(TextQueryBackend):
         query = re.sub(
             r'matches /(\.\*)?\"([^"]+)\"(\.\*)?/', escape_regex_value, query
         )
+
+        # Fix NOT operator formatting - remove space after !
+        # Cloud SIEM requires !(expr) or !field, not ! (expr) or ! field
+        query = re.sub(r'!\s+', '!', query)
+
+        # Fix comparison operator spacing for consistency
+        # Standardize to no spaces around operators: field=value, field>=value
+        # This matches the = operator formatting and keeps expressions compact
+        query = re.sub(r'\s*>=\s*', '>=', query)  # Greater than or equal
+        query = re.sub(r'\s*<=\s*', '<=', query)  # Less than or equal
+        query = re.sub(r'\s*!=\s*', '!=', query)  # Not equal
+        query = re.sub(r'\s*>\s*', '>', query)    # Greater than
+        query = re.sub(r'\s*<\s*', '<', query)    # Less than
 
         # Transform Windows EventID values to include channel prefix
         query = self._transform_windows_eventid(rule, query)
@@ -828,6 +874,59 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         return used_fields
 
+    def _compute_entity_confidence(self, rule: SigmaRule) -> Dict[str, Any]:
+        """
+        Compute entity selection confidence for a rule.
+
+        Checks if the rule has entity selectors defined, and whether they are expected
+        based on the logsource category.
+
+        Args:
+            rule: Sigma rule being converted
+
+        Returns:
+            Dictionary with entity confidence metadata:
+            {
+                "has_selectors": bool,
+                "expected": bool,
+                "category": str,
+                "expected_entities": list,
+                "actual_entities": list
+            }
+        """
+        from sigma.pipelines.sumologic.category_entity_mapping import (
+            get_entities_for_category,
+            has_entity_mapping
+        )
+
+        # Get entity selectors that were actually assigned
+        actual_selectors = self._get_entity_selectors(rule.logsource)
+        has_selectors = len(actual_selectors) > 0
+
+        # Determine if entities are expected based on category
+        category = None
+        if rule.logsource and hasattr(rule.logsource, "category"):
+            category = rule.logsource.category
+
+        expected = False
+        expected_entity_types = []
+
+        if category:
+            expected = has_entity_mapping(category)
+            if expected:
+                expected_selectors = get_entities_for_category(category)
+                expected_entity_types = [e["entity_type"] for e in expected_selectors]
+
+        actual_entity_types = [e["entity_type"] for e in actual_selectors]
+
+        return {
+            "has_selectors": has_selectors,
+            "expected": expected,
+            "category": category or "unknown",
+            "expected_entities": expected_entity_types,
+            "actual_entities": actual_entity_types,
+        }
+
     def _collect_confidence_metadata(self, rule: SigmaRule) -> Dict[str, Any]:
         """
         Collect confidence metadata from pipeline transformations.
@@ -888,11 +987,59 @@ class SumoLogicCSEBackend(TextQueryBackend):
                             all_confidences.append(mapping["confidence"])
                             warnings_list.extend(mapping.get("warnings", []))
 
+        # Detect unmapped fields (fields used in the rule but not in any ConfidenceAwareFieldMapping)
+        # These are fields that passed through the pipeline unchanged
+        mapped_fields = {mapping["cse_field"] for mapping in all_field_mappings}
+        unmapped_fields = used_cse_fields - mapped_fields
+
+        if unmapped_fields:
+            # Add warning for each unmapped field
+            for field in sorted(unmapped_fields):
+                warning = f"Field '{field}' is not mapped to CSE schema and may not exist in Cloud SIEM logs"
+                warnings_list.append(warning)
+
+            # Penalize overall confidence for unmapped fields
+            # Each unmapped field gets a confidence of 0.0
+            # This ensures the conversion is flagged as low confidence
+            for field in unmapped_fields:
+                all_confidences.append(0.0)
+                # Add a fake mapping entry to show the unmapped field in output
+                all_field_mappings.append({
+                    "sigma_field": field,  # Field name before and after are the same (no mapping)
+                    "cse_field": field,
+                    "confidence": 0.0,
+                    "factors": {
+                        "semantic_similarity": 0.0,
+                        "data_preservation": 0.0,
+                        "type_compatibility": 0.0,
+                        "field_specificity": 0.0,
+                    },
+                    "warnings": [f"UNMAPPED: Field '{field}' is not in any CSE schema mapping"],
+                })
+
         # Compute overall confidence (weighted average)
         if all_confidences:
             overall_score = sum(all_confidences) / len(all_confidences)
         else:
-            overall_score = 1.0  # No mappings = full confidence
+            overall_score = 1.0  # No mappings = full confidence (rule has no field filters)
+
+        # Check entity selector coverage
+        # Rules should have entity selectors when they have meaningful log source context
+        entity_confidence = self._compute_entity_confidence(rule)
+        entity_has_selectors = entity_confidence.get("has_selectors", False)
+        entity_expected = entity_confidence.get("expected", False)
+
+        # If entities are expected but missing, add warning and adjust confidence
+        if entity_expected and not entity_has_selectors:
+            warning = (
+                f"No entity selectors defined for category '{entity_confidence.get('category', 'unknown')}'. "
+                f"Expected entities: {', '.join(entity_confidence.get('expected_entities', []))}. "
+                f"Entity selection helps Cloud SIEM correlate alerts and track entity behavior."
+            )
+            warnings_list.append(warning)
+
+            # Reduce confidence by 10% for missing entities (not as critical as unmapped fields)
+            overall_score = overall_score * 0.9
 
         # Get threshold for this category
         category_threshold = get_category_threshold(logsource_category)
@@ -912,6 +1059,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             "field_mappings": all_field_mappings,
             "warnings": warnings_list,
             "blocked": overall_score < threshold_used,
+            "entity_selection": entity_confidence,
         }
 
     def _build_confidence_error_message(self, confidence_metadata: Dict[str, Any]) -> str:
@@ -1152,12 +1300,10 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     def _get_entity_selectors(self, logsource: Any) -> List[Dict[str, str]]:
         """
-        Get entity selectors based on logsource category or product.
-
-        Strategy:
-        1. First try to determine from category (most specific)
-        2. If no category, try to determine from product (educated guess)
-        3. If neither matches known patterns, return empty list (fail safely)
+        Get entity selectors based on logsource using 3-tier priority:
+        1. Category-based (highest specificity - from Sigma taxonomy)
+        2. Classification-based (product pattern from vendor_product_mapping)
+        3. Product-based (legacy fallback)
 
         Args:
             logsource: Sigma rule logsource object
@@ -1165,59 +1311,38 @@ class SumoLogicCSEBackend(TextQueryBackend):
         Returns:
             List of entity selector dictionaries (empty if cannot determine confidently)
         """
+        from sigma.pipelines.sumologic.vendor_product_mapping import VendorProductMapper
+        from sigma.pipelines.sumologic.entity_classification import get_entities_for_classification
+        from sigma.pipelines.sumologic.category_entity_mapping import get_entities_for_category
+
         entity_selectors = []
 
         if not logsource:
             return entity_selectors
 
-        # Extract category and product
+        # Extract category, product, and service
         category = None
         product = None
+        service = None
         if hasattr(logsource, "category"):
             category = logsource.category
         if hasattr(logsource, "product"):
             product = logsource.product
+        if hasattr(logsource, "service"):
+            service = logsource.service
 
-        # Priority 1: Map by category (most specific)
-        if category == "process_creation":
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_username", "expression": "user_username"},
-                {"entity_type": "_process", "expression": "baseImage"},
-            ]
-        elif category in ["network_connection", "firewall"]:
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_ip", "expression": "srcDevice_ip"},
-            ]
-        elif category == "file_event":
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_file", "expression": "file_path"},
-            ]
-        elif category == "dns_query":
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_domain", "expression": "http_url_fqdn"},
-            ]
-        elif category == "authentication":
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_ip", "expression": "device_ip"},
-                {"entity_type": "_username", "expression": "user_username"},
-            ]
-        elif category == "registry_event":
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_username", "expression": "user_username"},
-            ]
-        elif category == "image_load":
-            return [
-                {"entity_type": "_hostname", "expression": "device_hostname"},
-                {"entity_type": "_username", "expression": "user_username"},
-            ]
+        # Priority 1: Category-based (from comprehensive Sigma taxonomy mapping)
+        if category:
+            entities = get_entities_for_category(category)
+            if entities:
+                return entities
 
-        # Priority 2: Map by product (educated guess when no category)
+        # Priority 2: Classification-based (uses metadata from vendor_product_mapping)
+        classification = VendorProductMapper.get_source_classification(product, service, category)
+        if classification:
+            return get_entities_for_classification(classification)
+
+        # Priority 3: Product-based fallback (legacy - for backward compatibility)
         if product:
             product_lower = product.lower()
 
@@ -1247,7 +1372,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
                     {"entity_type": "_username", "expression": "user_username"},
                 ]
 
-        # Priority 3: Fail safely - return empty list
+        # Fail safely - return empty list
         # Better to have no entity selectors than wrong ones
         # Rule will need manual review for entity selection
         return entity_selectors

@@ -119,6 +119,11 @@ KNOWN_GOOD_MAPPINGS = {
     ("Hostname", "device_hostname"): 0.95,
     ("ip", "srcDevice_ip"): 0.85,  # Context-dependent but common
     ("IpAddress", "srcDevice_ip"): 0.90,
+
+    # DNS field mappings (generic category: dns fields)
+    ("query", "dns_query"): 0.95,  # Generic DNS query field → CSE dns_query
+    ("record_type", "dns_queryType"): 0.90,
+    ("rcode", "dns_replyCode"): 0.90,
 }
 
 

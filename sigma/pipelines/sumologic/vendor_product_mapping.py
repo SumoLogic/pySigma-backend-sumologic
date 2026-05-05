@@ -17,129 +17,131 @@ class VendorProductMapper:
     Based on CSE parser configuration analysis.
     """
 
-    # Mapping: (product, service, category) → (vendor, product, parser_pattern_type)
+    # Mapping: (product, service, category) → (vendor, product, parser_pattern_type, source_classification)
     # Pattern types: "concatenation" (dynamic), "simple" (field-based), "constant" (static)
+    # Source classifications: "endpoint", "identity", "cloud_audit", "network", "application",
+    #                         "cloud_infrastructure", "security_tool"
     LOGSOURCE_TO_VENDOR_PRODUCT = {
         # ===== WINDOWS =====
-        ("windows", "sysmon", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "security", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "system", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "application", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "powershell", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "powershell-classic", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "taskscheduler", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "wmi", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "dns-server", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "firewall-as", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "windefend", None): ("Microsoft", "Windows", "concatenation"),
-        ("windows", "driver-framework", None): ("Microsoft", "Windows", "concatenation"),
+        ("windows", "sysmon", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "security", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "system", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "application", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "powershell", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "powershell-classic", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "taskscheduler", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "wmi", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "dns-server", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", "firewall-as", None): ("Microsoft", "Windows", "concatenation", "network"),
+        ("windows", "windefend", None): ("Microsoft", "Windows", "concatenation", "security_tool"),
+        ("windows", "driver-framework", None): ("Microsoft", "Windows", "concatenation", "endpoint"),
 
         # Windows by category (when service not specified)
-        ("windows", None, "process_creation"): ("Microsoft", "Windows", "concatenation"),
-        ("windows", None, "network_connection"): ("Microsoft", "Windows", "concatenation"),
-        ("windows", None, "dns_query"): ("Microsoft", "Windows", "concatenation"),
-        ("windows", None, "file_event"): ("Microsoft", "Windows", "concatenation"),
-        ("windows", None, "registry_event"): ("Microsoft", "Windows", "concatenation"),
-        ("windows", None, "image_load"): ("Microsoft", "Windows", "concatenation"),
+        ("windows", None, "process_creation"): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", None, "network_connection"): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", None, "dns_query"): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", None, "file_event"): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", None, "registry_event"): ("Microsoft", "Windows", "concatenation", "endpoint"),
+        ("windows", None, "image_load"): ("Microsoft", "Windows", "concatenation", "endpoint"),
 
         # ===== AWS =====
-        ("aws", "cloudtrail", None): ("Amazon AWS", "CloudTrail", "concatenation"),
-        ("aws", "s3", None): ("Amazon AWS", "AWS S3 Server Access Logs", "simple"),
-        ("aws", "guardduty", None): ("Amazon AWS", "GuardDuty", "simple"),
-        ("aws", "vpc", None): ("Amazon AWS", "VpcFlowLogs", "simple"),
-        ("aws", "waf", None): ("Amazon AWS", "Web Application Firewall (WAF)", "simple"),
-        ("aws", "route53", None): ("Amazon AWS", "Route53", "simple"),
-        ("aws", "config", None): ("Amazon AWS", "Config", "simple"),
-        ("aws", "eks", None): ("Amazon AWS", "EKS", "simple"),
-        ("aws", "elb", None): ("Amazon AWS", "Elastic Load Balancer", "simple"),
-        ("aws", "alb", None): ("Amazon AWS", "Application Load Balancer", "simple"),
-        ("aws", "cloudwatch", None): ("Amazon AWS", "CloudWatch", "simple"),
-        ("aws", "cloudfront", None): ("Amazon AWS", "CloudFront", "simple"),
-        ("aws", "apigateway", None): ("Amazon AWS", "API Gateway", "simple"),
-        ("aws", "inspector", None): ("Amazon AWS", "Inspector", "simple"),
-        ("aws", "networkfirewall", None): ("Amazon AWS", "Network Firewall", "simple"),
-        ("aws", "securityhub", None): ("Amazon AWS", "Security Hub", "simple"),
-        ("aws", "redshift", None): ("Amazon AWS", "Redshift", "simple"),
-        ("aws", "vpn", None): ("Amazon AWS", "VPN", "simple"),
-        ("aws", "trustedadvisor", None): ("Amazon AWS", "Trusted Advisor", "simple"),
+        ("aws", "cloudtrail", None): ("Amazon AWS", "CloudTrail", "concatenation", "cloud_audit"),
+        ("aws", "s3", None): ("Amazon AWS", "AWS S3 Server Access Logs", "simple", "cloud_infrastructure"),
+        ("aws", "guardduty", None): ("Amazon AWS", "GuardDuty", "simple", "security_tool"),
+        ("aws", "vpc", None): ("Amazon AWS", "VpcFlowLogs", "simple", "cloud_infrastructure"),
+        ("aws", "waf", None): ("Amazon AWS", "Web Application Firewall (WAF)", "simple", "network"),
+        ("aws", "route53", None): ("Amazon AWS", "Route53", "simple", "cloud_infrastructure"),
+        ("aws", "config", None): ("Amazon AWS", "Config", "simple", "cloud_audit"),
+        ("aws", "eks", None): ("Amazon AWS", "EKS", "simple", "cloud_infrastructure"),
+        ("aws", "elb", None): ("Amazon AWS", "Elastic Load Balancer", "simple", "cloud_infrastructure"),
+        ("aws", "alb", None): ("Amazon AWS", "Application Load Balancer", "simple", "cloud_infrastructure"),
+        ("aws", "cloudwatch", None): ("Amazon AWS", "CloudWatch", "simple", "cloud_infrastructure"),
+        ("aws", "cloudfront", None): ("Amazon AWS", "CloudFront", "simple", "cloud_infrastructure"),
+        ("aws", "apigateway", None): ("Amazon AWS", "API Gateway", "simple", "cloud_infrastructure"),
+        ("aws", "inspector", None): ("Amazon AWS", "Inspector", "simple", "security_tool"),
+        ("aws", "networkfirewall", None): ("Amazon AWS", "Network Firewall", "simple", "network"),
+        ("aws", "securityhub", None): ("Amazon AWS", "Security Hub", "simple", "security_tool"),
+        ("aws", "redshift", None): ("Amazon AWS", "Redshift", "simple", "cloud_infrastructure"),
+        ("aws", "vpn", None): ("Amazon AWS", "VPN", "simple", "network"),
+        ("aws", "trustedadvisor", None): ("Amazon AWS", "Trusted Advisor", "simple", "cloud_audit"),
 
         # ===== AZURE =====
-        ("azure", "signinlogs", None): ("Microsoft", "Azure", "constant"),
-        ("azure", "auditlogs", None): ("Microsoft", "Azure", "constant"),
-        ("azure", "activitylogs", None): ("Microsoft", "Azure", "simple"),
-        ("azure", "azuread", None): ("Microsoft", "Azure", "simple"),
-        ("azure", "firewall", None): ("Microsoft", "Azure", "constant"),
+        ("azure", "signinlogs", None): ("Microsoft", "Azure", "constant", "identity"),
+        ("azure", "auditlogs", None): ("Microsoft", "Azure", "constant", "cloud_audit"),
+        ("azure", "activitylogs", None): ("Microsoft", "Azure", "simple", "cloud_audit"),
+        ("azure", "azuread", None): ("Microsoft", "Azure", "simple", "identity"),
+        ("azure", "firewall", None): ("Microsoft", "Azure", "constant", "network"),
 
         # ===== GCP =====
-        ("gcp", "audit", None): ("Google", "Google Cloud Platform", "transform"),
-        ("gcp", "gce", None): ("Google", "Google Cloud Platform", "transform"),
-        ("gcp", "gcs", None): ("Google", "Google Cloud Platform", "simple"),
-        ("gcp", "bigquery", None): ("Google", "BigQuery", "simple"),
-        ("gcp", "securitycenter", None): ("Google", "Security Command Center", "simple"),
+        ("gcp", "audit", None): ("Google", "Google Cloud Platform", "transform", "cloud_audit"),
+        ("gcp", "gce", None): ("Google", "Google Cloud Platform", "transform", "cloud_infrastructure"),
+        ("gcp", "gcs", None): ("Google", "Google Cloud Platform", "simple", "cloud_infrastructure"),
+        ("gcp", "bigquery", None): ("Google", "BigQuery", "simple", "cloud_infrastructure"),
+        ("gcp", "securitycenter", None): ("Google", "Security Command Center", "simple", "security_tool"),
 
         # ===== GOOGLE WORKSPACE =====
-        ("gsuite", None, None): ("Google", "Google Workspace", "simple"),
-        ("google_workspace", None, None): ("Google", "Google Workspace", "simple"),
+        ("gsuite", None, None): ("Google", "Google Workspace", "simple", "application"),
+        ("google_workspace", None, None): ("Google", "Google Workspace", "simple", "application"),
 
         # ===== LINUX =====
-        ("linux", "syslog", None): ("Linux", "Linux OS Syslog", "simple"),
-        ("linux", "auditd", None): ("Linux", "Auditd", "simple"),
-        ("linux", "cron", None): ("Linux", "Linux OS Syslog", "simple"),
-        ("linux", "auth", None): ("Linux", "Secure", "simple"),
-        ("linux", "sysmon", None): ("Linux", "Sysmon for Linux", "simple"),
-        ("linux", "systemd", None): ("Linux", "Systemd Journal", "simple"),
+        ("linux", "syslog", None): ("Linux", "Linux OS Syslog", "simple", "endpoint"),
+        ("linux", "auditd", None): ("Linux", "Auditd", "simple", "endpoint"),
+        ("linux", "cron", None): ("Linux", "Linux OS Syslog", "simple", "endpoint"),
+        ("linux", "auth", None): ("Linux", "Secure", "simple", "endpoint"),
+        ("linux", "sysmon", None): ("Linux", "Sysmon for Linux", "simple", "endpoint"),
+        ("linux", "systemd", None): ("Linux", "Systemd Journal", "simple", "endpoint"),
 
         # ===== NETWORK DEVICES =====
         # Cisco
-        ("cisco", "aaa", None): ("Cisco Systems", "Secure Access Control Server (ACS)", "simple"),
-        ("cisco", "asa", None): ("Cisco Systems", "ASA", "simple"),
-        ("cisco", "ios", None): ("Cisco Systems", "Router and Switch IOS", "simple"),
-        ("cisco", "amp", None): ("Cisco Systems", "Advanced Malware Protection (AMP)", "simple"),
-        ("cisco", "firepower", None): ("Cisco Systems", "Firepower", "simple"),
-        ("cisco", "ise", None): ("Cisco Systems", "Identity Services Engine", "simple"),
-        ("cisco", "ironport", None): ("Cisco Systems", "Ironport", "simple"),
-        ("cisco", "meraki", None): ("Cisco Systems", "Meraki", "simple"),
-        ("cisco", "stealthwatch", None): ("Cisco Systems", "Stealthwatch", "simple"),
-        ("cisco", "umbrella", None): ("Cisco Systems", "Umbrella", "simple"),
-        ("cisco", "anyconnect", None): ("Cisco Systems", "AnyConnect", "simple"),
-        ("cisco", "secureemail", None): ("Cisco Systems", "Secure Email", "simple"),
+        ("cisco", "aaa", None): ("Cisco Systems", "Secure Access Control Server (ACS)", "simple", "identity"),
+        ("cisco", "asa", None): ("Cisco Systems", "ASA", "simple", "network"),
+        ("cisco", "ios", None): ("Cisco Systems", "Router and Switch IOS", "simple", "network"),
+        ("cisco", "amp", None): ("Cisco Systems", "Advanced Malware Protection (AMP)", "simple", "security_tool"),
+        ("cisco", "firepower", None): ("Cisco Systems", "Firepower", "simple", "network"),
+        ("cisco", "ise", None): ("Cisco Systems", "Identity Services Engine", "simple", "identity"),
+        ("cisco", "ironport", None): ("Cisco Systems", "Ironport", "simple", "network"),
+        ("cisco", "meraki", None): ("Cisco Systems", "Meraki", "simple", "network"),
+        ("cisco", "stealthwatch", None): ("Cisco Systems", "Stealthwatch", "simple", "network"),
+        ("cisco", "umbrella", None): ("Cisco Systems", "Umbrella", "simple", "network"),
+        ("cisco", "anyconnect", None): ("Cisco Systems", "AnyConnect", "simple", "network"),
+        ("cisco", "secureemail", None): ("Cisco Systems", "Secure Email", "simple", "network"),
 
         # Palo Alto Networks
-        ("paloaltonetworks", "threat", None): ("Palo Alto Networks", "Next Generation Firewall", "simple"),
-        ("paloaltonetworks", "traffic", None): ("Palo Alto Networks", "Next Generation Firewall", "simple"),
-        ("paloaltonetworks", "firewall", None): ("Palo Alto Networks", "Next Generation Firewall", "simple"),
-        ("paloaltonetworks", "cortex", None): ("Palo Alto Networks", "Cortex XDR", "simple"),
-        ("paloaltonetworks", "globalprotect", None): ("Palo Alto Networks", "GlobalProtect", "simple"),
-        ("paloaltonetworks", "prismacloud", None): ("Palo Alto Networks", "Prisma Cloud", "simple"),
-        ("paloaltonetworks", "traps", None): ("Palo Alto Networks", "Traps", "simple"),
+        ("paloaltonetworks", "threat", None): ("Palo Alto Networks", "Next Generation Firewall", "simple", "network"),
+        ("paloaltonetworks", "traffic", None): ("Palo Alto Networks", "Next Generation Firewall", "simple", "network"),
+        ("paloaltonetworks", "firewall", None): ("Palo Alto Networks", "Next Generation Firewall", "simple", "network"),
+        ("paloaltonetworks", "cortex", None): ("Palo Alto Networks", "Cortex XDR", "simple", "security_tool"),
+        ("paloaltonetworks", "globalprotect", None): ("Palo Alto Networks", "GlobalProtect", "simple", "network"),
+        ("paloaltonetworks", "prismacloud", None): ("Palo Alto Networks", "Prisma Cloud", "simple", "security_tool"),
+        ("paloaltonetworks", "traps", None): ("Palo Alto Networks", "Traps", "simple", "security_tool"),
 
         # Fortinet
-        ("fortinet", "fortigate", None): ("Fortinet", "Fortigate", "simple"),
-        ("fortinet", "forticlient", None): ("Fortinet", "Forticlient", "simple"),
+        ("fortinet", "fortigate", None): ("Fortinet", "Fortigate", "simple", "network"),
+        ("fortinet", "forticlient", None): ("Fortinet", "Forticlient", "simple", "security_tool"),
 
         # Check Point
-        ("checkpoint", "firewall", None): ("Check Point", "Firewall", "simple"),
+        ("checkpoint", "firewall", None): ("Check Point", "Firewall", "simple", "network"),
 
         # ===== APPLICATIONS =====
-        ("okta", None, None): ("Okta", "Single Sign-On", "simple"),
-        ("onelogin", None, None): ("OneLogin", "OneLogin", "simple"),
-        ("github", None, None): ("GitHub", "GitHub", "simple"),
-        ("m365", None, None): ("Microsoft", "Office 365", "simple"),
-        ("office365", None, None): ("Microsoft", "Office 365", "simple"),
-        ("exchange", None, None): ("Microsoft", "Exchange", "simple"),
+        ("okta", None, None): ("Okta", "Single Sign-On", "simple", "identity"),
+        ("onelogin", None, None): ("OneLogin", "OneLogin", "simple", "identity"),
+        ("github", None, None): ("GitHub", "GitHub", "simple", "application"),
+        ("m365", None, None): ("Microsoft", "Office 365", "simple", "application"),
+        ("office365", None, None): ("Microsoft", "Office 365", "simple", "application"),
+        ("exchange", None, None): ("Microsoft", "Exchange", "simple", "application"),
 
         # ===== MACOS =====
-        ("macos", None, None): ("Apple", "macOS", "simple"),
+        ("macos", None, None): ("Apple", "macOS", "simple", "endpoint"),
 
         # ===== KUBERNETES =====
-        ("kubernetes", "audit", None): ("Kubernetes", "Audit", "simple"),
+        ("kubernetes", "audit", None): ("Kubernetes", "Audit", "simple", "cloud_infrastructure"),
 
         # ===== GENERIC CATEGORIES (when product not specified) =====
         # These are fallbacks when only category is specified
-        (None, None, "proxy"): ("Generic", "Proxy", "simple"),
-        (None, None, "firewall"): ("Generic", "Firewall", "simple"),
-        (None, None, "dns"): ("Generic", "DNS", "simple"),
-        (None, None, "webserver"): ("Generic", "Web Server", "simple"),
+        (None, None, "proxy"): ("Generic", "Proxy", "simple", None),
+        (None, None, "firewall"): ("Generic", "Firewall", "simple", None),
+        (None, None, "dns"): ("Generic", "DNS", "simple", None),
+        (None, None, "webserver"): ("Generic", "Web Server", "simple", None),
     }
 
     @classmethod
@@ -148,9 +150,9 @@ class VendorProductMapper:
         product: Optional[str],
         service: Optional[str] = None,
         category: Optional[str] = None
-    ) -> Optional[Tuple[str, str, str]]:
+    ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """
-        Get CSE vendor, product, and pattern type for a Sigma logsource.
+        Get CSE vendor, product, pattern type, and source classification for a Sigma logsource.
 
         Args:
             product: Sigma logsource product (e.g., "windows", "aws")
@@ -158,13 +160,16 @@ class VendorProductMapper:
             category: Sigma logsource category (e.g., "process_creation")
 
         Returns:
-            Tuple of (vendor, product, pattern_type) or None if not found
+            Tuple of (vendor, product, pattern_type, classification) or (None, None, None, None) if not found.
+            Handles both 3-tuple (legacy) and 4-tuple (new) mappings for backward compatibility.
 
         Example:
             >>> get_vendor_product("windows", "sysmon")
-            ("Microsoft", "Windows", "concatenation")
+            ("Microsoft", "Windows", "concatenation", "endpoint")
             >>> get_vendor_product("aws", "cloudtrail")
-            ("Amazon AWS", "CloudTrail", "concatenation")
+            ("Amazon AWS", "CloudTrail", "concatenation", "cloud_audit")
+            >>> get_vendor_product("okta")
+            ("Okta", "Single Sign-On", "simple", "identity")
         """
         # Normalize to lowercase
         product_lower = product.lower() if product else None
@@ -174,29 +179,83 @@ class VendorProductMapper:
         # Try exact match: (product, service, category)
         key = (product_lower, service_lower, category_lower)
         if key in cls.LOGSOURCE_TO_VENDOR_PRODUCT:
-            return cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            result = cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            # Handle both 3-tuple (legacy) and 4-tuple (new) for backward compatibility
+            if len(result) == 3:
+                return (*result, None)  # vendor, product, pattern_type, None
+            return result  # vendor, product, pattern_type, classification
 
         # Try (product, service, None)
         key = (product_lower, service_lower, None)
         if key in cls.LOGSOURCE_TO_VENDOR_PRODUCT:
-            return cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            result = cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            if len(result) == 3:
+                return (*result, None)
+            return result
 
         # Try (product, None, category)
         key = (product_lower, None, category_lower)
         if key in cls.LOGSOURCE_TO_VENDOR_PRODUCT:
-            return cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            result = cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            if len(result) == 3:
+                return (*result, None)
+            return result
 
         # Try (product, None, None)
         key = (product_lower, None, None)
         if key in cls.LOGSOURCE_TO_VENDOR_PRODUCT:
-            return cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            result = cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            if len(result) == 3:
+                return (*result, None)
+            return result
 
         # Try generic category fallback (None, None, category)
         key = (None, None, category_lower)
         if key in cls.LOGSOURCE_TO_VENDOR_PRODUCT:
-            return cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            result = cls.LOGSOURCE_TO_VENDOR_PRODUCT[key]
+            if len(result) == 3:
+                return (*result, None)
+            return result
 
-        return None
+        return (None, None, None, None)
+
+    @classmethod
+    def get_source_classification(
+        cls,
+        product: Optional[str],
+        service: Optional[str] = None,
+        category: Optional[str] = None
+    ) -> Optional[str]:
+        """
+        Get source classification for entity selection.
+
+        Source classifications map products to entity selection patterns:
+        - "endpoint": Windows, Linux, macOS endpoints
+        - "identity": SSO/authentication systems (Okta, Azure SigninLogs)
+        - "cloud_audit": Cloud control plane audit logs (CloudTrail, Azure AuditLogs)
+        - "network": Firewalls, network devices
+        - "application": SaaS applications (GitHub, O365)
+        - "cloud_infrastructure": Cloud data plane logs (VPC Flow, ELB)
+        - "security_tool": EDR, AV, security products
+
+        Args:
+            product: Sigma logsource product
+            service: Sigma logsource service
+            category: Sigma logsource category
+
+        Returns:
+            Source classification string or None if not found
+
+        Example:
+            >>> get_source_classification("okta")
+            "identity"
+            >>> get_source_classification("aws", "cloudtrail")
+            "cloud_audit"
+            >>> get_source_classification("windows", "sysmon")
+            "endpoint"
+        """
+        vendor, product, pattern_type, classification = cls.get_vendor_product(product, service, category)
+        return classification
 
     @classmethod
     def has_cse_parser(
