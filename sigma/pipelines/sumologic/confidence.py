@@ -124,6 +124,33 @@ KNOWN_GOOD_MAPPINGS = {
     ("query", "dns_query"): 0.95,  # Generic DNS query field → CSE dns_query
     ("record_type", "dns_queryType"): 0.90,
     ("rcode", "dns_replyCode"): 0.90,
+
+    # Antivirus field mappings (generic category: antivirus)
+    ("Signature", "threat_identifier"): 0.95,  # AV signature name → threat identifier
+    ("signature", "threat_identifier"): 0.95,
+    ("Filename", "file_path"): 0.95,
+    ("FileName", "file_path"): 0.95,
+
+    # Proxy/Webserver W3C field mappings
+    ("c-uri", "http_url"): 0.95,
+    ("cs-method", "http_method"): 0.95,
+    ("cs-host", "http_url_fqdn"): 0.95,
+    ("c-useragent", "http_userAgent"): 0.95,
+    ("cs-user-agent", "http_userAgent"): 0.95,
+    ("sc-status", "http_response_statusCode"): 0.95,
+    ("cs-referrer", "http_referer"): 0.90,
+    ("c-ip", "srcDevice_ip"): 0.95,
+    ("src_ip", "srcDevice_ip"): 0.95,
+    ("dst_ip", "dstDevice_ip"): 0.95,
+
+    # Sigma taxonomy v2.1.0 network fields
+    ("source.ip", "srcDevice_ip"): 0.95,
+    ("source.port", "srcPort"): 0.95,
+    ("destination.ip", "dstDevice_ip"): 0.95,
+    ("destination.port", "dstPort"): 0.95,
+    ("dns.question.name", "dns_query"): 0.95,
+    ("dns.question.type", "dns_queryType"): 0.90,
+    ("dns.response.code", "dns_replyCode"): 0.90,
 }
 
 
@@ -237,7 +264,7 @@ def compute_data_preservation(
         Data preservation score 0.0-1.0
     """
     score = 1.0
-    warnings = []
+    warnings: list[str] = []
 
     # Check for multi-value collapse
     if sigma_field in MULTI_VALUE_FIELDS:
@@ -494,7 +521,6 @@ def compute_confidence(
     mapping_key = (sigma_field, cse_field)
     if mapping_key in KNOWN_GOOD_MAPPINGS:
         confidence = KNOWN_GOOD_MAPPINGS[mapping_key]
-        # Return high-confidence score with perfect factors
         return ConfidenceScore(
             sigma_field=sigma_field,
             cse_field=cse_field,
@@ -508,8 +534,24 @@ def compute_confidence(
             warnings=["Known-good mapping (manual override)"],
         )
 
-    # Get CSE field schema
-    cse_field_schema = schema.get_field(cse_field) if schema else None
+    # Vendor-specific pass-through: field maps to itself and isn't in the CSE schema.
+    # These end up in fields['x'] syntax — that's correct behavior, not a low-confidence mapping.
+    cse_field_lookup = schema.get_field(cse_field) if schema else None
+    if sigma_field == cse_field and cse_field_lookup is None:
+        return ConfidenceScore(
+            sigma_field=sigma_field,
+            cse_field=cse_field,
+            overall=0.8,
+            factors=ConfidenceFactors(
+                semantic_similarity=1.0,
+                data_preservation=1.0,
+                type_compatibility=1.0,
+                field_specificity=0.8,
+            ),
+            warnings=["Vendor-specific pass-through (fields[] wrapped)"],
+        )
+
+    cse_field_schema = cse_field_lookup
 
     # Compute individual factors
     semantic = compute_semantic_similarity(sigma_field, cse_field, cse_field_schema)

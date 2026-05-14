@@ -136,13 +136,15 @@ class SumoLogicCSEBackend(TextQueryBackend):
         min_confidence: float = 0.7,
         schema_path: Optional[str] = None,
         include_confidence_metadata: bool = True,
+        fail_on_unmapped_logsource: bool = False,
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
         self.rule_metadata = []
-        self.min_confidence = min_confidence
+        self.min_confidence = float(min_confidence)
         self.schema_path = schema_path
         self.include_confidence_metadata = include_confidence_metadata
+        self.fail_on_unmapped_logsource = fail_on_unmapped_logsource
 
         # Load CSE schema for field type checking
         from sigma.pipelines.sumologic.schema_loader import SchemaLoader
@@ -285,6 +287,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
             list=self.list_separator.join(values)
         )
 
+    def convert_condition_field_eq_field(self, cond, state: ConversionState):
+        from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+        raise SigmaFeatureNotSupportedByBackendError(
+            "Field reference expressions (field-to-field comparisons) are not supported by the Sumo Logic CSE backend."
+        )
+
     def convert_condition_val_str(self, cond, state: ConversionState) -> str:
         """
         Override to provide better error messages for unsupported unbound value patterns.
@@ -373,19 +381,16 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     def _transform_windows_eventid(self, rule: SigmaRule, query: str) -> str:
         """
-        Transform Windows EventID values to include channel prefix.
+        Transform Windows EventID values to include service prefix.
 
-        CSE uses format: {{channel}}-{{EventID}} (e.g., "Security-4624")
+        CSE uses format: {{service}}-{{EventID}} (e.g., "Security-4624")
         Sigma rules just have EventID numbers (e.g., "4624")
 
         This transforms:
-          metadata_deviceEventId=4624 → metadata_deviceEventId="Security-4624"
+          metadata_deviceEventId=4624 → metadata_deviceEventId="security-4624"
 
-        Channel is determined from logsource.service:
-          - security → "Security"
-          - system → "System"
-          - application → "Application"
-          - etc.
+        The service prefix comes directly from the Sigma rule's logsource.service
+        field for any rule where product=windows.
 
         Args:
             rule: Sigma rule object
@@ -394,11 +399,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
         Returns:
             Query with transformed EventID values
         """
-        # Only apply if query contains metadata_deviceEventId
         if "metadata_deviceEventId" not in query:
             return query
 
-        # Get Windows channel from logsource.service
         if not rule.logsource or not hasattr(rule.logsource, "service"):
             return query
 
@@ -406,24 +409,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if not service:
             return query
 
-        # Map service name to Windows channel name
-        service_to_channel = {
-            "security": "Security",
-            "system": "System",
-            "application": "Application",
-            "powershell": "PowerShell",
-            "powershell-classic": "PowerShell",
-            "sysmon": "Microsoft-Windows-Sysmon/Operational",
-            "taskscheduler": "Microsoft-Windows-TaskScheduler/Operational",
-            "wmi": "Microsoft-Windows-WMI-Activity/Operational",
-            "dns-server": "DNS-Server",
-            "firewall-as": "Microsoft-Windows-Windows Firewall With Advanced Security/Firewall",
-        }
-
-        channel = service_to_channel.get(service.lower())
-        if not channel:
-            # Unknown service, leave as-is
-            return query
+        channel = service.lower()
 
         # Transform EventID values: metadata_deviceEventId="4624" → metadata_deviceEventId="Security-4624"
         # Also handle EventID in lists: metadata_deviceEventId in ("4624", "4625") → metadata_deviceEventId in ("Security-4624", "Security-4625")
@@ -487,22 +473,37 @@ class SumoLogicCSEBackend(TextQueryBackend):
             category=rule.logsource.category if hasattr(rule.logsource, 'category') else None
         )
 
-        if not mapping:
-            # No mapping found - log warning but don't fail
-            import warnings
-            logsource_str = f"product={rule.logsource.product}, service={getattr(rule.logsource, 'service', None)}, category={getattr(rule.logsource, 'category', None)}"
-            warnings.warn(
-                f"No Cloud SIEM parser mapping found for logsource: {logsource_str}. "
-                f"Rule may not match expected log sources in Cloud SIEM."
-            )
+        vendor, product, pattern_type, classification = mapping
+
+        # Check if we got a valid mapping (not all Nones)
+        if vendor is None or product is None:
+            # Track unmapped logsource for confidence metadata
+            self._unmapped_logsource = {
+                "product": rule.logsource.product if hasattr(rule.logsource, 'product') else None,
+                "service": getattr(rule.logsource, 'service', None),
+                "category": getattr(rule.logsource, 'category', None),
+            }
+            # Return query without metadata filters - don't inject invalid metadata_vendor="None"
             return query
 
-        vendor, product, pattern_type, classification = mapping
+        # Clear any previous unmapped logsource tracking (we have a valid mapping)
+        self._unmapped_logsource = None
 
         # Skip "Generic" vendor/product metadata - these are fallback categories
         # not actual vendor/product filters in Cloud SIEM
         if vendor == "Generic":
             return query
+
+        # For Windows: only inject vendor/product when the rule references vendor-specific
+        # fields (EventID, EventData.*, Channel, etc.). Rules using only normalized Sigma
+        # taxonomy fields rely on normalized sources and don't need vendor/product scoping.
+        if vendor == "Microsoft" and product == "Windows":
+            has_vendor_fields = (
+                "metadata_deviceEventId" in query
+                or "fields[" in query
+            )
+            if not has_vendor_fields:
+                return query
 
         # Prepend vendor/product filters to the query
         metadata_filter = f'metadata_vendor="{vendor}" AND metadata_product="{product}"'
@@ -638,7 +639,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Find all bare field names (not already in fields[] syntax, not metadata fields)
         # Pattern: field name at word boundary, followed by operator (=, in, matches, etc.)
         # Exclude: metadata_, fields[, already wrapped fields
-        pattern = r'\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_\.]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))'
+        field_pattern = r'\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_\.]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))'
 
         def wrap_if_not_in_schema(match):
             field_name = match.group(1)
@@ -669,7 +670,20 @@ class SumoLogicCSEBackend(TextQueryBackend):
             # For other vendors, just wrap the field name
             return f"fields['{field_name}']"
 
-        return re.sub(pattern, wrap_if_not_in_schema, query)
+        # Split query into quoted and unquoted segments to avoid wrapping
+        # words inside string values (e.g., "sign" in "Max sign in attempts")
+        # Matches: "quoted strings", /regex patterns/, and everything else
+        segments = re.split(r'("(?:[^"\\]|\\.)*"|/(?:[^/\\]|\\.)*?/)', query)
+        result_parts = []
+        for i, segment in enumerate(segments):
+            if i % 2 == 1:
+                # Inside a quoted string or regex — leave untouched
+                result_parts.append(segment)
+            else:
+                # Outside quotes — apply field wrapping
+                result_parts.append(re.sub(field_pattern, wrap_if_not_in_schema, segment))
+
+        return ''.join(result_parts)
 
     def finalize_query_default(
         self, rule: SigmaRule, query: str, index: int, state: ConversionState
@@ -836,16 +850,20 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
             # Check confidence threshold
             if confidence_metadata["overall_score"] < confidence_metadata["threshold_used"]:
-                # Threshold failure - build detailed error message
+                from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
                 error_msg = self._build_confidence_error_message(confidence_metadata)
+                raise SigmaFeatureNotSupportedByBackendError(error_msg)
 
-                if self.collect_errors:
-                    # In collect_errors mode, store error and return None
-                    # The caller will handle skipping this rule
-                    raise ValueError(error_msg)
-                else:
-                    # In normal mode, fail immediately with detailed error
-                    raise ValueError(error_msg)
+            # Check for unmapped logsource if strict mode enabled
+            if self.fail_on_unmapped_logsource and not confidence_metadata.get("has_vendor_mapping", True):
+                from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+                unmapped = confidence_metadata.get("unmapped_logsource", {})
+                raise SigmaFeatureNotSupportedByBackendError(
+                    f"Conversion blocked: No vendor/product mapping found for logsource "
+                    f"(product={unmapped.get('product')}, service={unmapped.get('service')}, "
+                    f"category={unmapped.get('category')}). "
+                    f"Use -O fail_on_unmapped_logsource=false to allow conversion without metadata filters."
+                )
 
             # Add confidence metadata to rule JSON
             rule_json["mapping_confidence"] = confidence_metadata
@@ -992,30 +1010,46 @@ class SumoLogicCSEBackend(TextQueryBackend):
         mapped_fields = {mapping["cse_field"] for mapping in all_field_mappings}
         unmapped_fields = used_cse_fields - mapped_fields
 
-        if unmapped_fields:
-            # Add warning for each unmapped field
-            for field in sorted(unmapped_fields):
-                warning = f"Field '{field}' is not mapped to CSE schema and may not exist in Cloud SIEM logs"
-                warnings_list.append(warning)
+        # Determine if this is a vendor-specific logsource where pass-through is expected
+        is_vendor_specific = (
+            rule.logsource and
+            (rule.logsource.product is not None or rule.logsource.service is not None)
+        )
 
-            # Penalize overall confidence for unmapped fields
-            # Each unmapped field gets a confidence of 0.0
-            # This ensures the conversion is flagged as low confidence
-            for field in unmapped_fields:
-                all_confidences.append(0.0)
-                # Add a fake mapping entry to show the unmapped field in output
-                all_field_mappings.append({
-                    "sigma_field": field,  # Field name before and after are the same (no mapping)
-                    "cse_field": field,
-                    "confidence": 0.0,
-                    "factors": {
-                        "semantic_similarity": 0.0,
-                        "data_preservation": 0.0,
-                        "type_compatibility": 0.0,
-                        "field_specificity": 0.0,
-                    },
-                    "warnings": [f"UNMAPPED: Field '{field}' is not in any CSE schema mapping"],
-                })
+        if unmapped_fields:
+            for field in sorted(unmapped_fields):
+                if is_vendor_specific:
+                    # Vendor-specific pass-through: field goes to fields['x'] — correct behavior
+                    all_confidences.append(0.8)
+                    all_field_mappings.append({
+                        "sigma_field": field,
+                        "cse_field": field,
+                        "confidence": 0.8,
+                        "factors": {
+                            "semantic_similarity": 1.0,
+                            "data_preservation": 1.0,
+                            "type_compatibility": 1.0,
+                            "field_specificity": 0.8,
+                        },
+                        "warnings": ["Vendor-specific pass-through (fields[] wrapped)"],
+                    })
+                else:
+                    # Generic logsource with unmapped field — genuinely uncertain
+                    warning = f"Field '{field}' is not mapped to CSE schema and may not exist in Cloud SIEM logs"
+                    warnings_list.append(warning)
+                    all_confidences.append(0.0)
+                    all_field_mappings.append({
+                        "sigma_field": field,
+                        "cse_field": field,
+                        "confidence": 0.0,
+                        "factors": {
+                            "semantic_similarity": 0.0,
+                            "data_preservation": 0.0,
+                            "type_compatibility": 0.0,
+                            "field_specificity": 0.0,
+                        },
+                        "warnings": [f"UNMAPPED: Field '{field}' is not in any CSE schema mapping"],
+                    })
 
         # Compute overall confidence (weighted average)
         if all_confidences:
@@ -1041,15 +1075,30 @@ class SumoLogicCSEBackend(TextQueryBackend):
             # Reduce confidence by 10% for missing entities (not as critical as unmapped fields)
             overall_score = overall_score * 0.9
 
+        # Check for unmapped logsource (no vendor/product mapping found)
+        unmapped_logsource = getattr(self, '_unmapped_logsource', None)
+        if unmapped_logsource:
+            logsource_str = (
+                f"product={unmapped_logsource['product']}, "
+                f"service={unmapped_logsource['service']}, "
+                f"category={unmapped_logsource['category']}"
+            )
+            warnings_list.append(
+                f"No vendor/product mapping for logsource ({logsource_str}). "
+                f"Rule will not have metadata_vendor/metadata_product filters and may not match expected logs."
+            )
+            # Reset for next rule
+            self._unmapped_logsource = None
+
         # Get threshold for this category
         category_threshold = get_category_threshold(logsource_category)
 
-        # Use user-configured minimum confidence if higher than category threshold
+        # User-configured min_confidence overrides category threshold
         # Special case: min_confidence=0.0 disables all threshold checking
         if self.min_confidence == 0.0:
             threshold_used = 0.0
         else:
-            threshold_used = max(self.min_confidence, category_threshold)
+            threshold_used = self.min_confidence
 
         return {
             "overall_score": round(overall_score, 3),
@@ -1060,6 +1109,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
             "warnings": warnings_list,
             "blocked": overall_score < threshold_used,
             "entity_selection": entity_confidence,
+            "has_vendor_mapping": unmapped_logsource is None,
+            "unmapped_logsource": unmapped_logsource,
         }
 
     def _build_confidence_error_message(self, confidence_metadata: Dict[str, Any]) -> str:

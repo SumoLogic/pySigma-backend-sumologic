@@ -339,6 +339,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                 identifier="sumologic_cse_network_connection",
                 transformation=ConfidenceAwareFieldMapping(
                     mapping={
+                        # Sysmon-style fields
                         "SourceIp": "srcDevice_ip",
                         "SourcePort": "srcPort",
                         "DestinationIp": "dstDevice_ip",
@@ -350,6 +351,17 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                         "Initiated": "action",
                         "DestinationHostname": "dstDevice_hostname",
                         "SourceHostname": "srcDevice_hostname",
+                        # Sigma taxonomy v2.1.0 network/connection fields
+                        "source.ip": "srcDevice_ip",
+                        "source.port": "srcPort",
+                        "destination.ip": "dstDevice_ip",
+                        "destination.port": "dstPort",
+                        "network.transport": "ipProtocol",
+                        "network.protocol": "application",
+                        "source.bytes": "bytesOut",
+                        "destination.bytes": "bytesIn",
+                        "source.packets": "packetsOut",
+                        "destination.packets": "packetsIn",
                     },
                     logsource_category="network_connection",
                     schema=schema
@@ -374,13 +386,27 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                 rule_conditions=[LogsourceCondition(category="dns_query")],
             ),
             # Generic DNS (category: dns) - for cross-platform DNS rules
+            # Includes both traditional fields and Sigma taxonomy v2.1.0 network/dns fields
             ProcessingItem(
                 identifier="sumologic_cse_dns",
                 transformation=ConfidenceAwareFieldMapping(
                     mapping={
+                        # Traditional DNS fields
                         "query": "dns_query",
                         "record_type": "dns_queryType",
                         "rcode": "dns_replyCode",
+                        # Sigma taxonomy v2.1.0 network/dns service fields
+                        "dns.question.name": "dns_query",
+                        "dns.question.type": "dns_queryType",
+                        "dns.response.code": "dns_replyCode",
+                        "dns.answers.name": "dns_reply",
+                        "dns.answers.data": "dns_replyIp",
+                        "dns.answers.ttl": "dns_replyTtl",
+                        # IP fields for network context
+                        "source.ip": "srcDevice_ip",
+                        "source.port": "srcPort",
+                        "destination.ip": "dstDevice_ip",
+                        "destination.port": "dstPort",
                     },
                     logsource_category="dns",
                     schema=schema
@@ -437,6 +463,30 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                     schema=schema
                 ),
                 rule_conditions=[LogsourceCondition(category="registry_event")],
+            ),
+            # Antivirus Events
+            ProcessingItem(
+                identifier="sumologic_cse_antivirus",
+                transformation=ConfidenceAwareFieldMapping(
+                    mapping={
+                        # Sigma taxonomy antivirus fields
+                        "Signature": "threat_identifier",
+                        "signature": "threat_identifier",
+                        "Filename": "file_path",
+                        "FileName": "file_path",
+                        "filename": "file_path",
+                        "Action": "action",
+                        "action": "action",
+                        # Common additional fields
+                        "Computer": "device_hostname",
+                        "User": "user_username",
+                        "ThreatName": "threat_identifier",
+                        "Malware": "threat_identifier",
+                    },
+                    logsource_category="antivirus",
+                    schema=schema
+                ),
+                rule_conditions=[LogsourceCondition(category="antivirus")],
             ),
             # Windows Security Events - Authentication
             ProcessingItem(
@@ -498,28 +548,79 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
                     LogsourceCondition(product="windows", service="powershell")
                 ],
             ),
-            # Web/Proxy Logs
+            # Web/Proxy Logs (W3C Extended Log Format fields from Sigma taxonomy)
             ProcessingItem(
                 identifier="sumologic_cse_proxy",
                 transformation=ConfidenceAwareFieldMapping(
                     mapping={
+                        # URI/URL fields
                         "c-uri": "http_url",
+                        "c-uri-extension": "http_url_extension",
+                        "c-uri-query": "http_url_query",
+                        "c-uri-stem": "http_url_path",
                         "cs-uri-query": "http_url_query",
+                        "cs-uri-stem": "http_url_path",
+                        # Host and method
                         "cs-method": "http_method",
-                        "cs-host": "http_hostname",
+                        "cs-host": "http_url_fqdn",
+                        "r-dns": "http_url_fqdn",
+                        # User agent and referrer
                         "c-useragent": "http_userAgent",
+                        "cs-user-agent": "http_userAgent",
+                        "cs-referrer": "http_referer",
+                        "cs-referer": "http_referer",
+                        # Status and version
                         "sc-status": "http_response_statusCode",
+                        "cs-version": "http_requestVersion",
+                        # Authentication
                         "cs-username": "user_username",
+                        # IP addresses
                         "c-ip": "srcDevice_ip",
+                        "src_ip": "srcDevice_ip",
                         "r-ip": "dstDevice_ip",
+                        "dst_ip": "dstDevice_ip",
+                        # Bytes
                         "cs-bytes": "bytesOut",
                         "sc-bytes": "bytesIn",
+                        # Generic
                         "url": "http_url",
                     },
                     logsource_category="proxy",
                     schema=schema
                 ),
                 rule_conditions=[LogsourceCondition(category="proxy")],
+            ),
+            # Webserver Logs (W3C Extended Log Format fields from Sigma taxonomy)
+            ProcessingItem(
+                identifier="sumologic_cse_webserver",
+                transformation=ConfidenceAwareFieldMapping(
+                    mapping={
+                        # Client info
+                        "c-ip": "srcDevice_ip",
+                        "cs-username": "user_username",
+                        # Server info
+                        "s-computername": "device_hostname",
+                        "s-ip": "dstDevice_ip",
+                        "s-port": "dstPort",
+                        # Request fields
+                        "cs-method": "http_method",
+                        "cs-uri-stem": "http_url_path",
+                        "cs-uri-query": "http_url_query",
+                        "cs-version": "http_requestVersion",
+                        "cs-host": "http_url_fqdn",
+                        "cs-user-agent": "http_userAgent",
+                        "cs-cookie": "http_cookie",
+                        "cs-referer": "http_referer",
+                        # Response fields
+                        "sc-status": "http_response_statusCode",
+                        "sc-bytes": "bytesIn",
+                        "cs-bytes": "bytesOut",
+                        "time-taken": "http_response_time",
+                    },
+                    logsource_category="webserver",
+                    schema=schema
+                ),
+                rule_conditions=[LogsourceCondition(category="webserver")],
             ),
             # Firewall Logs
             ProcessingItem(

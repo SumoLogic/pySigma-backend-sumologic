@@ -71,6 +71,8 @@ class VendorProductMapper:
         ("azure", "activitylogs", None): ("Microsoft", "Azure", "simple", "cloud_audit"),
         ("azure", "azuread", None): ("Microsoft", "Azure", "simple", "identity"),
         ("azure", "firewall", None): ("Microsoft", "Azure", "constant", "network"),
+        ("azure", "riskdetection", None): ("Microsoft", "Azure", "simple", "identity"),
+        ("azure", "pim", None): ("Microsoft", "Azure", "simple", "identity"),
 
         # ===== GCP =====
         ("gcp", "audit", None): ("Google", "Google Cloud Platform", "transform", "cloud_audit"),
@@ -82,14 +84,9 @@ class VendorProductMapper:
         # ===== GOOGLE WORKSPACE =====
         ("gsuite", None, None): ("Google", "Google Workspace", "simple", "application"),
         ("google_workspace", None, None): ("Google", "Google Workspace", "simple", "application"),
+        ("gcp", "google_workspace.admin", None): ("Google", "Google Workspace", "simple", "application"),
+        ("gcp", "google_workspace.login", None): ("Google", "Google Workspace", "simple", "application"),
 
-        # ===== LINUX =====
-        ("linux", "syslog", None): ("Linux", "Linux OS Syslog", "simple", "endpoint"),
-        ("linux", "auditd", None): ("Linux", "Auditd", "simple", "endpoint"),
-        ("linux", "cron", None): ("Linux", "Linux OS Syslog", "simple", "endpoint"),
-        ("linux", "auth", None): ("Linux", "Secure", "simple", "endpoint"),
-        ("linux", "sysmon", None): ("Linux", "Sysmon for Linux", "simple", "endpoint"),
-        ("linux", "systemd", None): ("Linux", "Systemd Journal", "simple", "endpoint"),
 
         # ===== NETWORK DEVICES =====
         # Cisco
@@ -119,6 +116,18 @@ class VendorProductMapper:
         ("fortinet", "fortigate", None): ("Fortinet", "Fortigate", "simple", "network"),
         ("fortinet", "forticlient", None): ("Fortinet", "Forticlient", "simple", "security_tool"),
 
+        # FortiGate - Sigma uses "fortigate" as product, not "fortinet"
+        ("fortigate", None, None): ("Fortinet", "Fortigate", "simple", "network"),
+        ("fortigate", "event", None): ("Fortinet", "Fortigate", "simple", "network"),
+        ("fortigate", "traffic", None): ("Fortinet", "Fortigate", "simple", "network"),
+        ("fortigate", "utm", None): ("Fortinet", "Fortigate", "simple", "network"),
+
+        # Palo Alto - Sigma uses "paloalto" as product, not "paloaltonetworks"
+        ("paloalto", None, None): ("Palo Alto Networks", "Next Generation Firewall", "simple", "network"),
+        ("paloalto", "traffic", None): ("Palo Alto Networks", "Next Generation Firewall", "simple", "network"),
+        ("paloalto", "threat", None): ("Palo Alto Networks", "Next Generation Firewall", "simple", "network"),
+        ("paloalto", "globalprotect", None): ("Palo Alto Networks", "GlobalProtect", "simple", "network"),
+
         # Check Point
         ("checkpoint", "firewall", None): ("Check Point", "Firewall", "simple", "network"),
 
@@ -130,8 +139,6 @@ class VendorProductMapper:
         ("office365", None, None): ("Microsoft", "Office 365", "simple", "application"),
         ("exchange", None, None): ("Microsoft", "Exchange", "simple", "application"),
 
-        # ===== MACOS =====
-        ("macos", None, None): ("Apple", "macOS", "simple", "endpoint"),
 
         # ===== KUBERNETES =====
         ("kubernetes", "audit", None): ("Kubernetes", "Audit", "simple", "cloud_infrastructure"),
@@ -142,6 +149,16 @@ class VendorProductMapper:
         (None, None, "firewall"): ("Generic", "Firewall", "simple", None),
         (None, None, "dns"): ("Generic", "DNS", "simple", None),
         (None, None, "webserver"): ("Generic", "Web Server", "simple", None),
+        (None, None, "antivirus"): ("Generic", "Antivirus", "simple", "security_tool"),
+        (None, None, "database"): ("Generic", "Database", "simple", "application"),
+
+        # ===== OTHER PRODUCTS =====
+        ("bitbucket", "audit", None): ("Atlassian", "Bitbucket", "simple", "application"),
+        ("cisco", "duo", None): ("Cisco Systems", "Duo Security", "simple", "identity"),
+        ("zeek", "dns", None): ("Zeek", "Zeek", "simple", "network"),
+        ("zeek", "http", None): ("Zeek", "Zeek", "simple", "network"),
+        ("zeek", "smb_files", None): ("Zeek", "Zeek", "simple", "network"),
+        ("zeek", None, None): ("Zeek", "Zeek", "simple", "network"),
     }
 
     @classmethod
