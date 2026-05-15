@@ -79,6 +79,64 @@ def extract_confidence_metadata(pipeline: ProcessingPipeline) -> Dict[str, Any]:
     return confidence_data
 
 
+# Confidence thresholds from the CLI tool (must match confidence.py)
+CATEGORY_THRESHOLDS = {
+    "authentication": 0.80,
+    "process_creation": 0.75,
+    "image_load": 0.75,
+    "registry_event": 0.75,
+    "network_connection": 0.70,
+    "dns_query": 0.70,
+    "firewall": 0.70,
+    "file_event": 0.70,
+    "proxy": 0.60,
+    "default": 0.70,
+}
+
+
+def check_confidence_gate(confidence_metadata: Dict[str, Any]) -> Dict[str, Any]:
+    """Check if a rule would pass the confidence gate.
+
+    Args:
+        confidence_metadata: Confidence metadata from conversion
+
+    Returns:
+        Dictionary with gate status and details
+    """
+    if not confidence_metadata or not confidence_metadata.get('field_mappings'):
+        return {
+            "would_pass": True,
+            "reason": "No field mappings to check",
+            "failed_mappings": [],
+            "threshold": None
+        }
+
+    category = confidence_metadata.get('logsource_category', 'default')
+    threshold = CATEGORY_THRESHOLDS.get(category, CATEGORY_THRESHOLDS['default'])
+
+    failed_mappings = []
+    for mapping in confidence_metadata['field_mappings']:
+        confidence = mapping.get('confidence', 1.0)
+        if confidence < threshold:
+            failed_mappings.append({
+                "sigma_field": mapping['sigma_field'],
+                "cse_field": mapping['cse_field'],
+                "confidence": confidence,
+                "threshold": threshold,
+                "gap": threshold - confidence
+            })
+
+    would_pass = len(failed_mappings) == 0
+
+    return {
+        "would_pass": would_pass,
+        "reason": f"All mappings meet threshold" if would_pass else f"{len(failed_mappings)} mapping(s) below threshold",
+        "failed_mappings": failed_mappings,
+        "threshold": threshold,
+        "category": category
+    }
+
+
 def convert_rules(rule_paths: List[Path], enable_confidence: bool = True) -> List[Dict[str, Any]]:
     """Convert selected Sigma rules to Sumo Logic CSE format.
 
@@ -560,6 +618,28 @@ def main():
                 rule_json = result['rule']
                 source_yaml = result.get('source_yaml', '')
                 confidence_metadata = result.get('confidence_metadata', {})
+
+                # Check confidence gate status
+                gate_status = check_confidence_gate(confidence_metadata)
+
+                # Show prominent gate status banner
+                if gate_status['would_pass']:
+                    if gate_status['threshold'] is not None:
+                        st.success(f"✅ **WOULD CONVERT** — All field mappings meet confidence threshold ({gate_status['threshold']:.0%} for `{gate_status.get('category', 'default')}`)")
+                    else:
+                        st.success(f"✅ **WOULD CONVERT** — {gate_status['reason']}")
+                else:
+                    st.error(f"🚫 **BLOCKED BY DEFAULT** — {len(gate_status['failed_mappings'])} mapping(s) below threshold ({gate_status['threshold']:.0%} for `{gate_status.get('category', 'default')}`)")
+
+                    # Show which mappings failed
+                    with st.expander("⚠️ View Failed Mappings", expanded=True):
+                        for fm in gate_status['failed_mappings']:
+                            st.markdown(
+                                f"- `{fm['sigma_field']}` → `{fm['cse_field']}`: "
+                                f"**{fm['confidence']:.0%}** (need {fm['threshold']:.0%}, gap: {fm['gap']:.0%})"
+                            )
+
+                st.divider()
 
                 # Side-by-side comparison
                 col_input, col_output = st.columns(2)
