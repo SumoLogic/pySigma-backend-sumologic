@@ -813,6 +813,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Create rule JSON
         rule_json = {
             "content_type": "RULE",
+            "sigma_uid": str(rule.id) if rule.id else None,
             "enabled": enabled,
             "is_prototype": prototype,
             "name": rule.title,
