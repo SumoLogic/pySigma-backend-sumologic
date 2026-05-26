@@ -309,8 +309,9 @@ def _extract_context_prefix(field_name: str) -> Optional[str]:
     Returns prefix or None if no context prefix found.
     """
     context_prefixes = ["Subject", "Target", "Source", "Destination", "Src", "Dst"]
+    field_lower = field_name.lower()
     for prefix in context_prefixes:
-        if field_name.startswith(prefix):
+        if field_lower.startswith(prefix.lower()):
             return prefix
     return None
 

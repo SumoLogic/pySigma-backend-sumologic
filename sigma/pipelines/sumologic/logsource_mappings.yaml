@@ -1,0 +1,1370 @@
+# Sumo Logic Cloud SIEM (CSE) — Unified Logsource Mappings
+#
+# This file consolidates two data sources:
+#   1. Vendor/product metadata (LOGSOURCE_TO_VENDOR_PRODUCT)
+#   2. Pipeline ProcessingItem field mappings
+#
+# Each entry may contain:
+#   - logsource:       Sigma logsource match conditions (product/service/category)
+#   - vendor:          CSE metadata_vendor value
+#   - product_name:    CSE metadata_product value
+#   - pattern_type:    Parser pattern: concatenation | simple | constant | transform
+#   - classification:  Source class: endpoint | identity | cloud_audit | network |
+#                      application | cloud_infrastructure | security_tool
+#   - fields:          Sigma field → CSE schema field mappings
+#
+# Order matters for entries with `fields` — it defines pipeline processing priority.
+
+mappings:
+
+  # ===========================================================================
+  # CATEGORY-BASED FIELD MAPPINGS (no product restriction)
+  # ===========================================================================
+
+  - name: process_creation
+    logsource:
+      category: process_creation
+    fields:
+      CommandLine: commandLine
+      Image: baseImage
+      ParentImage: parentBaseImage
+      ParentCommandLine: parentCommandLine
+      ProcessId: pid
+      ParentProcessId: parentPid
+      CurrentDirectory: file_path
+      OriginalFileName: file_basename
+      User: user_username
+      LogonId: sessionId
+      IntegrityLevel: severity
+      md5: file_hash_md5
+      MD5: file_hash_md5
+      sha1: file_hash_sha1
+      SHA1: file_hash_sha1
+      sha256: file_hash_sha256
+      SHA256: file_hash_sha256
+      Hashes: file_hash_sha256
+      imphash: file_hash_imphash
+      ProcessGuid: processUid
+      Description: description
+
+  - name: network_connection
+    logsource:
+      category: network_connection
+    fields:
+      SourceIp: srcDevice_ip
+      SourcePort: srcPort
+      DestinationIp: dstDevice_ip
+      DestinationPort: dstPort
+      Protocol: ipProtocol
+      Image: baseImage
+      User: user_username
+      ProcessId: pid
+      Initiated: action
+      DestinationHostname: dstDevice_hostname
+      SourceHostname: srcDevice_hostname
+      source.ip: srcDevice_ip
+      source.port: srcPort
+      destination.ip: dstDevice_ip
+      destination.port: dstPort
+      network.transport: ipProtocol
+      network.protocol: application
+      source.bytes: bytesOut
+      destination.bytes: bytesIn
+      source.packets: packetsOut
+      destination.packets: packetsIn
+
+  - name: dns_query
+    logsource:
+      category: dns_query
+    fields:
+      QueryName: dns_query
+      QueryResults: dns_reply
+      QueryStatus: dns_replyCode
+      Image: baseImage
+      ProcessId: pid
+      record_type: dns_queryType
+
+  - name: dns
+    logsource:
+      category: dns
+    fields:
+      query: dns_query
+      record_type: dns_queryType
+      rcode: dns_replyCode
+      dns.question.name: dns_query
+      dns.question.type: dns_queryType
+      dns.response.code: dns_replyCode
+      dns.answers.name: dns_reply
+      dns.answers.data: dns_replyIp
+      dns.answers.ttl: dns_replyTtl
+      source.ip: srcDevice_ip
+      source.port: srcPort
+      destination.ip: dstDevice_ip
+      destination.port: dstPort
+
+  - name: file_event
+    logsource:
+      category: file_event
+    fields:
+      TargetFilename: file_path
+      Image: baseImage
+      User: user_username
+      ProcessId: pid
+      md5: file_hash_md5
+      sha1: file_hash_sha1
+      sha256: file_hash_sha256
+
+  - name: image_load
+    logsource:
+      category: image_load
+    fields:
+      ImageLoaded: file_path
+      Signature: threat_identifier
+      Image: baseImage
+      md5: file_hash_md5
+      sha1: file_hash_sha1
+      sha256: file_hash_sha256
+      imphash: file_hash_imphash
+
+  - name: registry_event
+    logsource:
+      category: registry_event
+    fields:
+      TargetObject: changeTarget
+      EventType: changeType
+      Image: baseImage
+      User: user_username
+
+  - name: antivirus
+    logsource:
+      category: antivirus
+    vendor: "Generic"
+    product_name: "Antivirus"
+    pattern_type: simple
+    classification: security_tool
+    fields:
+      Signature: threat_identifier
+      signature: threat_identifier
+      Filename: file_path
+      FileName: file_path
+      filename: file_path
+      Action: action
+      action: action
+      Computer: device_hostname
+      User: user_username
+      ThreatName: threat_identifier
+      Malware: threat_identifier
+
+  # ===========================================================================
+  # WINDOWS — PRODUCT + SERVICE COMBINATIONS
+  # ===========================================================================
+
+  - name: windows_authentication
+    logsource_category: authentication
+    logsource:
+      product: windows
+      service: security
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+    fields:
+      TargetUserName: user_username
+      TargetDomainName: user_authDomain
+      SubjectUserName: user_username
+      SubjectDomainName: user_authDomain
+      LogonType: logonType
+      IpAddress: srcDevice_ip
+      WorkstationName: srcDevice_hostname
+      Status: errorCode
+      SubStatus: errorText
+      SourceNetworkAddress: srcDevice_ip
+      TargetLogonId: user_userId
+      LogonProcessName: application
+      AuthenticationPackageName: authProvider
+
+  - name: windows_system
+    logsource:
+      product: windows
+      service: system
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+    fields:
+      ServiceName: application
+      ImagePath: file_path
+      ServiceType: resource_type
+      StartType: changeType
+
+  # ===========================================================================
+  # CATEGORY-BASED FIELD MAPPINGS WITH VENDOR METADATA
+  # ===========================================================================
+
+  - name: proxy
+    logsource:
+      category: proxy
+    vendor: "Generic"
+    product_name: "Proxy"
+    pattern_type: simple
+    fields:
+      c-uri: http_url
+      c-uri-extension: http_url_extension
+      c-uri-query: http_url_query
+      c-uri-stem: http_url_path
+      cs-uri-query: http_url_query
+      cs-uri-stem: http_url_path
+      cs-method: http_method
+      cs-host: http_url_fqdn
+      r-dns: http_url_fqdn
+      c-useragent: http_userAgent
+      cs-user-agent: http_userAgent
+      cs-referrer: http_referer
+      cs-referer: http_referer
+      sc-status: http_response_statusCode
+      cs-version: http_requestVersion
+      cs-username: user_username
+      c-ip: srcDevice_ip
+      src_ip: srcDevice_ip
+      r-ip: dstDevice_ip
+      dst_ip: dstDevice_ip
+      cs-bytes: bytesOut
+      sc-bytes: bytesIn
+      url: http_url
+
+  - name: webserver
+    logsource:
+      category: webserver
+    vendor: "Generic"
+    product_name: "Web Server"
+    pattern_type: simple
+    fields:
+      c-ip: srcDevice_ip
+      cs-username: user_username
+      s-computername: device_hostname
+      s-ip: dstDevice_ip
+      s-port: dstPort
+      cs-method: http_method
+      cs-uri-stem: http_url_path
+      cs-uri-query: http_url_query
+      cs-version: http_requestVersion
+      cs-host: http_url_fqdn
+      cs-user-agent: http_userAgent
+      cs-cookie: http_cookie
+      cs-referer: http_referer
+      sc-status: http_response_statusCode
+      sc-bytes: bytesIn
+      cs-bytes: bytesOut
+      time-taken: http_response_time
+
+  - name: firewall
+    logsource:
+      category: firewall
+    vendor: "Generic"
+    product_name: "Firewall"
+    pattern_type: simple
+    fields:
+      src_ip: srcDevice_ip
+      dst_ip: dstDevice_ip
+      src_port: srcPort
+      dst_port: dstPort
+      protocol: ipProtocol
+      action: action
+
+  # ===========================================================================
+  # AWS
+  # ===========================================================================
+
+  - name: aws_cloudtrail
+    logsource:
+      product: aws
+      service: cloudtrail
+    vendor: "Amazon AWS"
+    product_name: "CloudTrail"
+    pattern_type: concatenation
+    classification: cloud_audit
+    fields:
+      eventName: action
+      eventSource: application
+      userIdentity.principalId: user_username
+      userIdentity.arn: user_userId
+      sourceIPAddress: srcDevice_ip
+      userAgent: http_userAgent
+      errorCode: errorCode
+      errorMessage: errorText
+
+  # ===========================================================================
+  # AZURE
+  # ===========================================================================
+
+  - name: azure_activity
+    logsource:
+      product: azure
+      service: activitylogs
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: simple
+    classification: cloud_audit
+    fields:
+      operationName: action
+      caller: user_username
+      callerIpAddress: srcDevice_ip
+      status: action
+      properties.message: description
+
+  # ===========================================================================
+  # OFFICE 365
+  # ===========================================================================
+
+  - name: office365
+    logsource:
+      service: office365
+    vendor: "Microsoft"
+    product_name: "Office 365"
+    pattern_type: simple
+    classification: application
+    fields:
+      Operation: action
+      UserId: user_username
+      ClientIP: srcDevice_ip
+      UserAgent: http_userAgent
+
+  # ===========================================================================
+  # LINUX
+  # ===========================================================================
+
+  - name: linux_auth
+    logsource:
+      product: linux
+      service: auth
+    fields:
+      user: user_username
+      srcip: srcDevice_ip
+      hostname: device_hostname
+      addr: srcDevice_ip
+
+  # ===========================================================================
+  # WINDOWS — BROAD PRODUCT-LEVEL MAPPINGS (lower priority than specific services)
+  # ===========================================================================
+
+  - name: windows_eventdata_common
+    logsource_category: windows_eventdata
+    logsource:
+      product: windows
+    fields:
+      TargetUserName: user_username
+      TargetUserSid: user_userId
+      TargetDomainName: user_authDomain
+      SubjectUserName: user_username
+      SubjectUserSid: user_userId
+      SubjectDomainName: user_authDomain
+      ProcessId: pid
+      ProcessGuid: processUid
+      IpAddress: srcDevice_ip
+      IpPort: srcPort
+      SourceIp: srcDevice_ip
+      SourcePort: srcPort
+      SourceAddress: srcDevice_ip
+      DestinationIp: dstDevice_ip
+      DestinationPort: dstPort
+      DestAddress: dstDevice_ip
+      DestPort: dstPort
+      LogonType: logonType
+      AuthenticationPackageName: authProvider
+      LogonProcessName: application
+      Image: baseImage
+      User: user_username
+      UtcTime: fields.EventData.UtcTime
+
+  - name: sysmon
+    logsource:
+      product: windows
+      service: sysmon
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+    fields:
+      CommandLine: commandLine
+      ParentImage: parentBaseImage
+      ParentProcessId: parentPid
+      ParentCommandLine: parentCommandLine
+      ParentProcessGuid: fields.EventData.ParentProcessGuid
+      CurrentDirectory: fields.EventData.CurrentDirectory
+      IntegrityLevel: severity
+      LogonGuid: sessionId
+      LogonId: sessionId
+      TerminalSessionId: fields.EventData.TerminalSessionId
+      Hashes: fields.EventData.Hashes
+      Protocol: fields.EventData.Protocol
+      SourceHostname: srcDevice_hostname
+      SourceIsIpv6: fields.EventData.SourceIsIpv6
+      DestinationHostname: dstDevice_hostname
+      DestinationPortName: fields.EventData.DestinationPortName
+      DestinationIsIpv6: fields.EventData.DestinationIsIpv6
+      Initiated: fields.EventData.Initiated
+      TargetFilename: file_path
+      CreationUtcTime: fields.EventData.CreationUtcTime
+      PreviousCreationUtcTime: fields.EventData.PreviousCreationUtcTime
+      Hash: fields.EventData.Hash
+      Contents: fields.EventData.Contents
+      ImageLoaded: file_path
+      Signed: fields.EventData.Signed
+      Signature: threat_identifier
+      SignatureStatus: fields.EventData.SignatureStatus
+      EventType: changeType
+      TargetObject: changeTarget
+      Details: fields.EventData.Details
+      NewName: fields.EventData.NewName
+      SourceImage: baseImage
+      SourceProcessGuid: fields.EventData.SourceProcessGuid
+      SourceProcessId: pid
+      TargetImage: file_path
+      TargetProcessGuid: fields.EventData.TargetProcessGuid
+      TargetProcessId: fields.EventData.TargetProcessId
+      NewThreadId: fields.EventData.NewThreadId
+      StartAddress: fields.EventData.StartAddress
+      StartModule: fields.EventData.StartModule
+      StartFunction: fields.EventData.StartFunction
+      PipeName: changeTarget
+      Device: changeTarget
+
+  - name: security
+    logsource:
+      product: windows
+      service: security
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+    fields:
+      NewProcessName: baseImage
+      NewProcessId: fields.EventData.NewProcessId
+      ParentProcessName: parentBaseImage
+      CommandLine: commandLine
+      MandatoryLabel: fields.EventData.MandatoryLabel
+      TokenElevationType: fields.EventData.TokenElevationType
+      WorkstationName: srcDevice_hostname
+      TargetServerName: dstDevice_hostname
+      TargetInfo: fields.EventData.TargetInfo
+      Status: errorCode
+      SubStatus: fields.EventData.SubStatus
+      FailureReason: cause
+      LogonGuid: fields.EventData.LogonGuid
+      KeyLength: fields.EventData.KeyLength
+      ElevatedToken: fields.EventData.ElevatedToken
+      ImpersonationLevel: fields.EventData.ImpersonationLevel
+      VirtualAccount: fields.EventData.VirtualAccount
+      Application: application
+      Direction: fields.EventData.Direction
+      FilterRTID: fields.EventData.FilterRTID
+      LayerName: fields.EventData.LayerName
+      RemoteMachineID: fields.EventData.RemoteMachineID
+      RemoteUserID: fields.EventData.RemoteUserID
+
+  - name: powershell
+    logsource:
+      product: windows
+      service: powershell
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+    fields:
+      ScriptBlockText: commandLine
+      ScriptBlockId: fields.EventData.ScriptBlockId
+      Path: file_path
+      MessageNumber: fields.EventData.MessageNumber
+      MessageTotal: fields.EventData.MessageTotal
+      HostApplication: commandLine
+      EngineVersion: fields.EngineVersion
+      HostVersion: fields.HostVersion
+      HostName: srcDevice_hostname
+      Payload: fields.EventData.Payload
+      RunspaceId: fields.EventData.RunspaceId
+
+  # ===========================================================================
+  # GENERIC FIELDS — universal fallback (no logsource condition)
+  # ===========================================================================
+
+  - name: generic_fields
+    logsource_category: generic
+    fields:
+      EventID: metadata_deviceEventId
+      EventId: metadata_deviceEventId
+      User: user_username
+      Username: user_username
+      UserName: user_username
+      SourceUser: user_username
+      TargetUser: targetUser_username
+      SubjectUserName: user_username
+      IpAddress: srcDevice_ip
+      SourceIp: srcDevice_ip
+      SourceIpAddress: srcDevice_ip
+      DestinationIp: dstDevice_ip
+      DestinationIpAddress: dstDevice_ip
+      ComputerName: device_hostname
+      Computer: device_hostname
+      Workstation: srcDevice_hostname
+      DestinationHostname: dstDevice_hostname
+      FileName: file_basename
+      FilePath: file_path
+      FileHash: file_hash_sha256
+      ProcessName: baseImage
+      ParentProcessName: parentBaseImage
+      DestinationPort: dstPort
+      SourcePort: srcPort
+      Action: action
+      Status: action
+
+  # ===========================================================================
+  # VENDOR-ONLY ENTRIES (no field mappings)
+  # These provide CSE vendor/product metadata for logsources without dedicated
+  # field mapping ProcessingItems.
+  # ===========================================================================
+
+  # --- Windows (additional services) ---
+
+  - name: windows_application
+    logsource:
+      product: windows
+      service: application
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_powershell_classic
+    logsource:
+      product: windows
+      service: powershell-classic
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_taskscheduler
+    logsource:
+      product: windows
+      service: taskscheduler
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_wmi
+    logsource:
+      product: windows
+      service: wmi
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_dns_server
+    logsource:
+      product: windows
+      service: dns-server
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_firewall_as
+    logsource:
+      product: windows
+      service: firewall-as
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: network
+
+  - name: windows_windefend
+    logsource:
+      product: windows
+      service: windefend
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: security_tool
+
+  - name: windows_driver_framework
+    logsource:
+      product: windows
+      service: driver-framework
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  # Windows by category (when service not specified)
+
+  - name: windows_process_creation_by_category
+    logsource:
+      product: windows
+      category: process_creation
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_network_connection_by_category
+    logsource:
+      product: windows
+      category: network_connection
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_dns_query_by_category
+    logsource:
+      product: windows
+      category: dns_query
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_file_event_by_category
+    logsource:
+      product: windows
+      category: file_event
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_registry_event_by_category
+    logsource:
+      product: windows
+      category: registry_event
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  - name: windows_image_load_by_category
+    logsource:
+      product: windows
+      category: image_load
+    vendor: "Microsoft"
+    product_name: "Windows"
+    pattern_type: concatenation
+    classification: endpoint
+
+  # --- AWS (additional services) ---
+
+  - name: aws_s3
+    logsource:
+      product: aws
+      service: s3
+    vendor: "Amazon AWS"
+    product_name: "AWS S3 Server Access Logs"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_guardduty
+    logsource:
+      product: aws
+      service: guardduty
+    vendor: "Amazon AWS"
+    product_name: "GuardDuty"
+    pattern_type: simple
+    classification: security_tool
+
+  - name: aws_vpc
+    logsource:
+      product: aws
+      service: vpc
+    vendor: "Amazon AWS"
+    product_name: "VpcFlowLogs"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_waf
+    logsource:
+      product: aws
+      service: waf
+    vendor: "Amazon AWS"
+    product_name: "Web Application Firewall (WAF)"
+    pattern_type: simple
+    classification: network
+
+  - name: aws_route53
+    logsource:
+      product: aws
+      service: route53
+    vendor: "Amazon AWS"
+    product_name: "Route53"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_config
+    logsource:
+      product: aws
+      service: config
+    vendor: "Amazon AWS"
+    product_name: "Config"
+    pattern_type: simple
+    classification: cloud_audit
+
+  - name: aws_eks
+    logsource:
+      product: aws
+      service: eks
+    vendor: "Amazon AWS"
+    product_name: "EKS"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_elb
+    logsource:
+      product: aws
+      service: elb
+    vendor: "Amazon AWS"
+    product_name: "Elastic Load Balancer"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_alb
+    logsource:
+      product: aws
+      service: alb
+    vendor: "Amazon AWS"
+    product_name: "Application Load Balancer"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_cloudwatch
+    logsource:
+      product: aws
+      service: cloudwatch
+    vendor: "Amazon AWS"
+    product_name: "CloudWatch"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_cloudfront
+    logsource:
+      product: aws
+      service: cloudfront
+    vendor: "Amazon AWS"
+    product_name: "CloudFront"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_apigateway
+    logsource:
+      product: aws
+      service: apigateway
+    vendor: "Amazon AWS"
+    product_name: "API Gateway"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_inspector
+    logsource:
+      product: aws
+      service: inspector
+    vendor: "Amazon AWS"
+    product_name: "Inspector"
+    pattern_type: simple
+    classification: security_tool
+
+  - name: aws_networkfirewall
+    logsource:
+      product: aws
+      service: networkfirewall
+    vendor: "Amazon AWS"
+    product_name: "Network Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: aws_securityhub
+    logsource:
+      product: aws
+      service: securityhub
+    vendor: "Amazon AWS"
+    product_name: "Security Hub"
+    pattern_type: simple
+    classification: security_tool
+
+  - name: aws_redshift
+    logsource:
+      product: aws
+      service: redshift
+    vendor: "Amazon AWS"
+    product_name: "Redshift"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: aws_vpn
+    logsource:
+      product: aws
+      service: vpn
+    vendor: "Amazon AWS"
+    product_name: "VPN"
+    pattern_type: simple
+    classification: network
+
+  - name: aws_trustedadvisor
+    logsource:
+      product: aws
+      service: trustedadvisor
+    vendor: "Amazon AWS"
+    product_name: "Trusted Advisor"
+    pattern_type: simple
+    classification: cloud_audit
+
+  # --- Azure ---
+
+  - name: azure_signinlogs
+    logsource:
+      product: azure
+      service: signinlogs
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: constant
+    classification: identity
+
+  - name: azure_auditlogs
+    logsource:
+      product: azure
+      service: auditlogs
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: constant
+    classification: cloud_audit
+
+  - name: azure_azuread
+    logsource:
+      product: azure
+      service: azuread
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: simple
+    classification: identity
+
+  - name: azure_firewall
+    logsource:
+      product: azure
+      service: firewall
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: constant
+    classification: network
+
+  - name: azure_riskdetection
+    logsource:
+      product: azure
+      service: riskdetection
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: simple
+    classification: identity
+
+  - name: azure_pim
+    logsource:
+      product: azure
+      service: pim
+    vendor: "Microsoft"
+    product_name: "Azure"
+    pattern_type: simple
+    classification: identity
+
+  # --- GCP ---
+
+  - name: gcp_audit
+    logsource:
+      product: gcp
+      service: audit
+    vendor: "Google"
+    product_name: "Google Cloud Platform"
+    pattern_type: transform
+    classification: cloud_audit
+
+  - name: gcp_gce
+    logsource:
+      product: gcp
+      service: gce
+    vendor: "Google"
+    product_name: "Google Cloud Platform"
+    pattern_type: transform
+    classification: cloud_infrastructure
+
+  - name: gcp_gcs
+    logsource:
+      product: gcp
+      service: gcs
+    vendor: "Google"
+    product_name: "Google Cloud Platform"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: gcp_bigquery
+    logsource:
+      product: gcp
+      service: bigquery
+    vendor: "Google"
+    product_name: "BigQuery"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  - name: gcp_securitycenter
+    logsource:
+      product: gcp
+      service: securitycenter
+    vendor: "Google"
+    product_name: "Security Command Center"
+    pattern_type: simple
+    classification: security_tool
+
+  # --- Google Workspace ---
+
+  - name: gsuite
+    logsource:
+      product: gsuite
+    vendor: "Google"
+    product_name: "Google Workspace"
+    pattern_type: simple
+    classification: application
+
+  - name: google_workspace
+    logsource:
+      product: google_workspace
+    vendor: "Google"
+    product_name: "Google Workspace"
+    pattern_type: simple
+    classification: application
+
+  - name: gcp_google_workspace_admin
+    logsource:
+      product: gcp
+      service: google_workspace.admin
+    vendor: "Google"
+    product_name: "Google Workspace"
+    pattern_type: simple
+    classification: application
+
+  - name: gcp_google_workspace_login
+    logsource:
+      product: gcp
+      service: google_workspace.login
+    vendor: "Google"
+    product_name: "Google Workspace"
+    pattern_type: simple
+    classification: application
+
+  # --- Cisco ---
+
+  - name: cisco_aaa
+    logsource:
+      product: cisco
+      service: aaa
+    vendor: "Cisco Systems"
+    product_name: "Secure Access Control Server (ACS)"
+    pattern_type: simple
+    classification: identity
+
+  - name: cisco_asa
+    logsource:
+      product: cisco
+      service: asa
+    vendor: "Cisco Systems"
+    product_name: "ASA"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_ios
+    logsource:
+      product: cisco
+      service: ios
+    vendor: "Cisco Systems"
+    product_name: "Router and Switch IOS"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_amp
+    logsource:
+      product: cisco
+      service: amp
+    vendor: "Cisco Systems"
+    product_name: "Advanced Malware Protection (AMP)"
+    pattern_type: simple
+    classification: security_tool
+
+  - name: cisco_firepower
+    logsource:
+      product: cisco
+      service: firepower
+    vendor: "Cisco Systems"
+    product_name: "Firepower"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_ise
+    logsource:
+      product: cisco
+      service: ise
+    vendor: "Cisco Systems"
+    product_name: "Identity Services Engine"
+    pattern_type: simple
+    classification: identity
+
+  - name: cisco_ironport
+    logsource:
+      product: cisco
+      service: ironport
+    vendor: "Cisco Systems"
+    product_name: "Ironport"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_meraki
+    logsource:
+      product: cisco
+      service: meraki
+    vendor: "Cisco Systems"
+    product_name: "Meraki"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_stealthwatch
+    logsource:
+      product: cisco
+      service: stealthwatch
+    vendor: "Cisco Systems"
+    product_name: "Stealthwatch"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_umbrella
+    logsource:
+      product: cisco
+      service: umbrella
+    vendor: "Cisco Systems"
+    product_name: "Umbrella"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_anyconnect
+    logsource:
+      product: cisco
+      service: anyconnect
+    vendor: "Cisco Systems"
+    product_name: "AnyConnect"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_secureemail
+    logsource:
+      product: cisco
+      service: secureemail
+    vendor: "Cisco Systems"
+    product_name: "Secure Email"
+    pattern_type: simple
+    classification: network
+
+  - name: cisco_duo
+    logsource:
+      product: cisco
+      service: duo
+    vendor: "Cisco Systems"
+    product_name: "Duo Security"
+    pattern_type: simple
+    classification: identity
+
+  # --- Palo Alto Networks ---
+
+  - name: paloaltonetworks_threat
+    logsource:
+      product: paloaltonetworks
+      service: threat
+    vendor: "Palo Alto Networks"
+    product_name: "Next Generation Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: paloaltonetworks_traffic
+    logsource:
+      product: paloaltonetworks
+      service: traffic
+    vendor: "Palo Alto Networks"
+    product_name: "Next Generation Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: paloaltonetworks_firewall
+    logsource:
+      product: paloaltonetworks
+      service: firewall
+    vendor: "Palo Alto Networks"
+    product_name: "Next Generation Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: paloaltonetworks_cortex
+    logsource:
+      product: paloaltonetworks
+      service: cortex
+    vendor: "Palo Alto Networks"
+    product_name: "Cortex XDR"
+    pattern_type: simple
+    classification: security_tool
+
+  - name: paloaltonetworks_globalprotect
+    logsource:
+      product: paloaltonetworks
+      service: globalprotect
+    vendor: "Palo Alto Networks"
+    product_name: "GlobalProtect"
+    pattern_type: simple
+    classification: network
+
+  - name: paloaltonetworks_prismacloud
+    logsource:
+      product: paloaltonetworks
+      service: prismacloud
+    vendor: "Palo Alto Networks"
+    product_name: "Prisma Cloud"
+    pattern_type: simple
+    classification: security_tool
+
+  - name: paloaltonetworks_traps
+    logsource:
+      product: paloaltonetworks
+      service: traps
+    vendor: "Palo Alto Networks"
+    product_name: "Traps"
+    pattern_type: simple
+    classification: security_tool
+
+  # Palo Alto — alternate product name used in Sigma rules
+
+  - name: paloalto
+    logsource:
+      product: paloalto
+    vendor: "Palo Alto Networks"
+    product_name: "Next Generation Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: paloalto_traffic
+    logsource:
+      product: paloalto
+      service: traffic
+    vendor: "Palo Alto Networks"
+    product_name: "Next Generation Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: paloalto_threat
+    logsource:
+      product: paloalto
+      service: threat
+    vendor: "Palo Alto Networks"
+    product_name: "Next Generation Firewall"
+    pattern_type: simple
+    classification: network
+
+  - name: paloalto_globalprotect
+    logsource:
+      product: paloalto
+      service: globalprotect
+    vendor: "Palo Alto Networks"
+    product_name: "GlobalProtect"
+    pattern_type: simple
+    classification: network
+
+  # --- Fortinet ---
+
+  - name: fortinet_fortigate
+    logsource:
+      product: fortinet
+      service: fortigate
+    vendor: "Fortinet"
+    product_name: "Fortigate"
+    pattern_type: simple
+    classification: network
+
+  - name: fortinet_forticlient
+    logsource:
+      product: fortinet
+      service: forticlient
+    vendor: "Fortinet"
+    product_name: "Forticlient"
+    pattern_type: simple
+    classification: security_tool
+
+  # FortiGate — alternate product name used in Sigma rules
+
+  - name: fortigate
+    logsource:
+      product: fortigate
+    vendor: "Fortinet"
+    product_name: "Fortigate"
+    pattern_type: simple
+    classification: network
+
+  - name: fortigate_event
+    logsource:
+      product: fortigate
+      service: event
+    vendor: "Fortinet"
+    product_name: "Fortigate"
+    pattern_type: simple
+    classification: network
+
+  - name: fortigate_traffic
+    logsource:
+      product: fortigate
+      service: traffic
+    vendor: "Fortinet"
+    product_name: "Fortigate"
+    pattern_type: simple
+    classification: network
+
+  - name: fortigate_utm
+    logsource:
+      product: fortigate
+      service: utm
+    vendor: "Fortinet"
+    product_name: "Fortigate"
+    pattern_type: simple
+    classification: network
+
+  # --- Check Point ---
+
+  - name: checkpoint_firewall
+    logsource:
+      product: checkpoint
+      service: firewall
+    vendor: "Check Point"
+    product_name: "Firewall"
+    pattern_type: simple
+    classification: network
+
+  # --- Applications ---
+
+  - name: okta
+    logsource:
+      product: okta
+    vendor: "Okta"
+    product_name: "Single Sign-On"
+    pattern_type: simple
+    classification: identity
+
+  - name: onelogin
+    logsource:
+      product: onelogin
+    vendor: "OneLogin"
+    product_name: "OneLogin"
+    pattern_type: simple
+    classification: identity
+
+  - name: github
+    logsource:
+      product: github
+    vendor: "GitHub"
+    product_name: "GitHub"
+    pattern_type: simple
+    classification: application
+
+  - name: m365
+    logsource:
+      product: m365
+    vendor: "Microsoft"
+    product_name: "Office 365"
+    pattern_type: simple
+    classification: application
+
+  - name: office365_product
+    logsource:
+      product: office365
+    vendor: "Microsoft"
+    product_name: "Office 365"
+    pattern_type: simple
+    classification: application
+
+  - name: exchange
+    logsource:
+      product: exchange
+    vendor: "Microsoft"
+    product_name: "Exchange"
+    pattern_type: simple
+    classification: application
+
+  # --- Kubernetes ---
+
+  - name: kubernetes_audit
+    logsource:
+      product: kubernetes
+      service: audit
+    vendor: "Kubernetes"
+    product_name: "Audit"
+    pattern_type: simple
+    classification: cloud_infrastructure
+
+  # --- Generic categories (vendor-only, no field mappings) ---
+
+  - name: generic_dns
+    logsource:
+      category: dns
+    vendor: "Generic"
+    product_name: "DNS"
+    pattern_type: simple
+
+  - name: generic_database
+    logsource:
+      category: database
+    vendor: "Generic"
+    product_name: "Database"
+    pattern_type: simple
+    classification: application
+
+  # --- Other products ---
+
+  - name: bitbucket_audit
+    logsource:
+      product: bitbucket
+      service: audit
+    vendor: "Atlassian"
+    product_name: "Bitbucket"
+    pattern_type: simple
+    classification: application
+
+  - name: zeek_dns
+    logsource:
+      product: zeek
+      service: dns
+    vendor: "Zeek"
+    product_name: "Zeek"
+    pattern_type: simple
+    classification: network
+
+  - name: zeek_http
+    logsource:
+      product: zeek
+      service: http
+    vendor: "Zeek"
+    product_name: "Zeek"
+    pattern_type: simple
+    classification: network
+
+  - name: zeek_smb_files
+    logsource:
+      product: zeek
+      service: smb_files
+    vendor: "Zeek"
+    product_name: "Zeek"
+    pattern_type: simple
+    classification: network
+
+  - name: zeek
+    logsource:
+      product: zeek
+    vendor: "Zeek"
+    product_name: "Zeek"
+    pattern_type: simple
+    classification: network

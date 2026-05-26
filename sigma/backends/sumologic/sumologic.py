@@ -10,7 +10,6 @@ from sigma.rule import SigmaRule
 from sigma.processing.pipeline import ProcessingPipeline
 import re
 import json
-import warnings
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 
@@ -250,9 +249,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         Overrides base class to quote numeric values when target field is a string type.
         """
-        from sigma.conditions import ConditionOR, ConditionAND, ConditionFieldEqualsValueExpression
+        from sigma.conditions import ConditionFieldEqualsValueExpression
         from sigma.types import SigmaString
-        from typing import Union, cast
+        from typing import cast
 
         if not all(isinstance(arg, ConditionFieldEqualsValueExpression) for arg in cond.args):
             return super().convert_condition_as_in_expression(cond, state)
@@ -409,7 +408,13 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if not service:
             return query
 
-        channel = service.lower()
+        SERVICE_TO_CHANNEL = {
+            "sysmon": "Microsoft-Windows-Sysmon/Operational",
+            "powershell": "PowerShell",
+            "powershell-classic": "PowerShell",
+            "taskscheduler": "Microsoft-Windows-TaskScheduler/Operational",
+        }
+        channel = SERVICE_TO_CHANNEL.get(service.lower(), service.capitalize())
 
         # Transform EventID values: metadata_deviceEventId="4624" → metadata_deviceEventId="Security-4624"
         # Also handle EventID in lists: metadata_deviceEventId in ("4624", "4625") → metadata_deviceEventId in ("Security-4624", "Security-4625")
@@ -726,11 +731,20 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Fix comparison operator spacing for consistency
         # Standardize to no spaces around operators: field=value, field>=value
         # This matches the = operator formatting and keeps expressions compact
-        query = re.sub(r'\s*>=\s*', '>=', query)  # Greater than or equal
-        query = re.sub(r'\s*<=\s*', '<=', query)  # Less than or equal
-        query = re.sub(r'\s*!=\s*', '!=', query)  # Not equal
-        query = re.sub(r'\s*>\s*', '>', query)    # Greater than
-        query = re.sub(r'\s*<\s*', '<', query)    # Less than
+        # Only apply outside regex literals (matches /.../) to avoid corrupting patterns
+        def _strip_operator_spaces(q: str) -> str:
+            parts = re.split(r'(matches\s*/[^/]*/)', q)
+            for i, part in enumerate(parts):
+                if not part.startswith('matches'):
+                    part = re.sub(r'\s*>=\s*', '>=', part)
+                    part = re.sub(r'\s*<=\s*', '<=', part)
+                    part = re.sub(r'\s*!=\s*', '!=', part)
+                    part = re.sub(r'\s*>\s*', '>', part)
+                    part = re.sub(r'\s*<\s*', '<', part)
+                    parts[i] = part
+            return ''.join(parts)
+
+        query = _strip_operator_spaces(query)
 
         # Transform Windows EventID values to include channel prefix
         query = self._transform_windows_eventid(rule, query)

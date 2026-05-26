@@ -11,7 +11,8 @@ packages = [
 
 # Include schema file in distribution
 include = [
-    "sigma/pipelines/sumologic/schema/descriptions.yaml"
+    "sigma/pipelines/sumologic/schema/descriptions.yaml",
+    "sigma/pipelines/sumologic/logsource_mappings.yaml"
 ]
 
 [tool.poetry.dependencies]
