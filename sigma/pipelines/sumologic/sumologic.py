@@ -27,7 +27,7 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
         self,
         mapping: Dict[str, str],
         logsource_category: str,
-        schema: Optional[SchemaIndex] = None
+        schema: Optional[SchemaIndex] = None,
     ):
         """
         Initialize confidence-aware field mapping.
@@ -48,7 +48,7 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
                 sigma_field=sigma_field,
                 cse_field=cse_field,
                 logsource_category=logsource_category,
-                schema=schema
+                schema=schema,
             )
             self.confidence_scores[sigma_field] = score
 
@@ -62,9 +62,8 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
         return {
             "logsource_category": self.logsource_category,
             "field_mappings": [
-                score.to_dict()
-                for score in self.confidence_scores.values()
-            ]
+                score.to_dict() for score in self.confidence_scores.values()
+            ],
         }
 
     def get_overall_confidence(self) -> float:
@@ -76,7 +75,9 @@ class ConfidenceAwareFieldMapping(FieldMappingTransformation):
         if not self.confidence_scores:
             return 1.0
 
-        total_confidence = sum(score.overall for score in self.confidence_scores.values())
+        total_confidence = sum(
+            score.overall for score in self.confidence_scores.values()
+        )
         return total_confidence / len(self.confidence_scores)
 
 
@@ -119,7 +120,11 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             return
 
         # Get detection values (handle both single values and lists)
-        values = detection_item.value if isinstance(detection_item.value, list) else [detection_item.value]
+        values = (
+            detection_item.value
+            if isinstance(detection_item.value, list)
+            else [detection_item.value]
+        )
 
         # Track which values can be transformed vs. which fail
         structured_patterns = []
@@ -127,18 +132,18 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
 
         for value in values:
             # Convert SigmaString to plain string for pattern matching
-            if hasattr(value, 'to_plain'):
+            if hasattr(value, "to_plain"):
                 value_str = value.to_plain()
             else:
                 value_str = str(value)
 
             # Strip wildcards added by |contains modifier (e.g., '*EngineVersion=2.*' → 'EngineVersion=2.')
             # This lets us detect structured patterns even when wrapped with wildcards
-            value_str_clean = value_str.strip('*')
+            value_str_clean = value_str.strip("*")
 
             # Try to parse structured patterns: FieldName=Value or FieldName:Value
             # Match word characters for field name, then = or :, then capture the rest
-            match = re.match(r'^(\w+)[:=](.+)$', value_str_clean)
+            match = re.match(r"^(\w+)[:=](.+)$", value_str_clean)
 
             if match:
                 field_name = match.group(1)
@@ -157,12 +162,16 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             error_msg += "Original Sigma detection:\n"
             error_msg += f"  Data|contains:\n"
             for value in values:
-                value_str = value.to_plain() if hasattr(value, 'to_plain') else str(value)
+                value_str = (
+                    value.to_plain() if hasattr(value, "to_plain") else str(value)
+                )
                 # Highlight unsupported values with ✗, supported with ✓
-                if value_str.strip('*') in [s.strip('*') for s in arbitrary_strings]:
+                if value_str.strip("*") in [s.strip("*") for s in arbitrary_strings]:
                     error_msg += f"    ✗ '{value_str.strip('*')}'  ← UNSUPPORTED (arbitrary string)\n"
                 else:
-                    error_msg += f"    ✓ '{value_str.strip('*')}'  ← OK (structured pattern)\n"
+                    error_msg += (
+                        f"    ✓ '{value_str.strip('*')}'  ← OK (structured pattern)\n"
+                    )
 
             error_msg += (
                 "\nReason: CSE parses Windows Event Log Data into structured EventData.* fields. "
@@ -179,7 +188,9 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
 
             error_msg += "Failed to convert:\n"
             for s in arbitrary_strings:
-                error_msg += f"  ✗ '{s.strip('*')}' - No field name found (arbitrary string)\n"
+                error_msg += (
+                    f"  ✗ '{s.strip('*')}' - No field name found (arbitrary string)\n"
+                )
 
             error_msg += (
                 "\nSupported patterns:\n"
@@ -209,9 +220,13 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
 
             # Update the value to just the value part (removing the field name prefix)
             # Preserve wildcard structure from the original SigmaString
-            plain = original_value.to_plain() if hasattr(original_value, 'to_plain') else str(original_value)
-            prefix = '*' if plain.startswith('*') else ''
-            suffix = '*' if plain.endswith('*') else ''
+            plain = (
+                original_value.to_plain()
+                if hasattr(original_value, "to_plain")
+                else str(original_value)
+            )
+            prefix = "*" if plain.startswith("*") else ""
+            suffix = "*" if plain.endswith("*") else ""
             detection_item.value = [SigmaString(f"{prefix}{field_value}{suffix}")]
 
         elif len(structured_patterns) > 1:
@@ -224,7 +239,11 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             error_msg += "Original Sigma detection:\n"
             error_msg += f"  Data|contains|all:\n"
             for field_name, field_value, original_value in structured_patterns:
-                value_str = original_value.to_plain() if hasattr(original_value, 'to_plain') else str(original_value)
+                value_str = (
+                    original_value.to_plain()
+                    if hasattr(original_value, "to_plain")
+                    else str(original_value)
+                )
                 error_msg += f"    - '{value_str.strip('*')}'  → Would convert to EventData.{field_name}\n"
 
             error_msg += (
@@ -298,9 +317,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
         ProcessingItem(
             identifier="sumologic_cse_transform_data_field",
             transformation=DataFieldTransformation(),
-            field_name_conditions=[
-                IncludeFieldCondition(fields=["Data"])
-            ],
+            field_name_conditions=[IncludeFieldCondition(fields=["Data"])],
         )
     )
 

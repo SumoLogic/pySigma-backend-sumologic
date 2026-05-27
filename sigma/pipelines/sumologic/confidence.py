@@ -13,7 +13,6 @@ from typing import Dict, Optional, Set
 from dataclasses import dataclass
 from .schema_loader import SchemaIndex, FieldSchema
 
-
 # Weights for confidence factors
 WEIGHT_SEMANTIC = 0.35
 WEIGHT_DATA_PRESERVATION = 0.30
@@ -118,18 +117,15 @@ KNOWN_GOOD_MAPPINGS = {
     ("Hostname", "device_hostname"): 0.95,
     ("ip", "srcDevice_ip"): 0.85,  # Context-dependent but common
     ("IpAddress", "srcDevice_ip"): 0.90,
-
     # DNS field mappings (generic category: dns fields)
     ("query", "dns_query"): 0.95,  # Generic DNS query field → CSE dns_query
     ("record_type", "dns_queryType"): 0.90,
     ("rcode", "dns_replyCode"): 0.90,
-
     # Antivirus field mappings (generic category: antivirus)
     ("Signature", "threat_identifier"): 0.95,  # AV signature name → threat identifier
     ("signature", "threat_identifier"): 0.95,
     ("Filename", "file_path"): 0.95,
     ("FileName", "file_path"): 0.95,
-
     # Proxy/Webserver W3C field mappings
     ("c-uri", "http_url"): 0.95,
     ("cs-method", "http_method"): 0.95,
@@ -141,7 +137,6 @@ KNOWN_GOOD_MAPPINGS = {
     ("c-ip", "srcDevice_ip"): 0.95,
     ("src_ip", "srcDevice_ip"): 0.95,
     ("dst_ip", "dstDevice_ip"): 0.95,
-
     # Sigma taxonomy v2.1.0 network fields
     ("source.ip", "srcDevice_ip"): 0.95,
     ("source.port", "srcPort"): 0.95,

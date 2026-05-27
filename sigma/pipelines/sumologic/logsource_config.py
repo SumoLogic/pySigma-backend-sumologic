@@ -9,7 +9,6 @@ from typing import Dict, List, Optional, Tuple
 
 import yaml
 
-
 _CONFIG_PATH = Path(__file__).parent / "logsource_mappings.yaml"
 _cached_data: Optional[dict] = None
 

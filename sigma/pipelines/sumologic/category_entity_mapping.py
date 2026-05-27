@@ -17,203 +17,156 @@ CATEGORY_ENTITY_PATTERNS: Dict[str, Tuple[List[str], str]] = {
     # ===== Process/Execution Categories =====
     "process_creation": (
         ["_hostname", "_username", "_process"],
-        "Process creation events identify which user on which host executed which process"
+        "Process creation events identify which user on which host executed which process",
     ),
     "process_termination": (
         ["_hostname", "_process"],
-        "Process termination tracks which processes ended on which hosts"
+        "Process termination tracks which processes ended on which hosts",
     ),
     "process_access": (
         ["_hostname", "_username", "_process"],
-        "Process access events track which processes are being accessed and by whom"
+        "Process access events track which processes are being accessed and by whom",
     ),
     "process_tampering": (
         ["_hostname", "_username", "_process"],
-        "Process tampering indicates which processes are being modified"
+        "Process tampering indicates which processes are being modified",
     ),
     "create_remote_thread": (
         ["_hostname", "_username", "_process"],
-        "Remote thread creation identifies process injection attempts"
+        "Remote thread creation identifies process injection attempts",
     ),
-
     # ===== File System Categories =====
     "file_event": (
         ["_hostname", "_file"],
-        "File operations identify which files are being acted upon and where"
+        "File operations identify which files are being acted upon and where",
     ),
     "file_change": (
         ["_hostname", "_file"],
-        "File modifications track which files are changed on which hosts"
+        "File modifications track which files are changed on which hosts",
     ),
     "file_delete": (
         ["_hostname", "_file"],
-        "File deletions identify which files are removed from which hosts"
+        "File deletions identify which files are removed from which hosts",
     ),
     "file_delete_detected": (
         ["_hostname", "_file"],
-        "Detected file deletions track suspicious file removal"
+        "Detected file deletions track suspicious file removal",
     ),
     "file_access": (
         ["_hostname", "_file"],
-        "File access events track which files are accessed"
+        "File access events track which files are accessed",
     ),
-    "file_rename": (
-        ["_hostname", "_file"],
-        "File renames track file name changes"
-    ),
+    "file_rename": (["_hostname", "_file"], "File renames track file name changes"),
     "file_block_executable": (
         ["_hostname", "_file"],
-        "Blocked executable files indicate prevented execution attempts"
+        "Blocked executable files indicate prevented execution attempts",
     ),
-    "file_block_shredding": (
-        ["_hostname", "_file"],
-        "Blocked file shredding attempts"
-    ),
+    "file_block_shredding": (["_hostname", "_file"], "Blocked file shredding attempts"),
     "file_executable_detected": (
         ["_hostname", "_file"],
-        "Executable file detection events"
+        "Executable file detection events",
     ),
-
     # ===== Network Categories =====
     "network_connection": (
         ["_hostname", "_ip"],
-        "Network events track which hosts/IPs are communicating"
+        "Network events track which hosts/IPs are communicating",
     ),
     "dns_query": (
         ["_hostname", "_domain"],
-        "DNS queries track which hosts are resolving which domains"
+        "DNS queries track which hosts are resolving which domains",
     ),
-    "dns": (
-        ["_hostname", "_domain"],
-        "Generic DNS activity tracks domain resolution"
-    ),
+    "dns": (["_hostname", "_domain"], "Generic DNS activity tracks domain resolution"),
     "firewall": (
         ["_hostname", "_ip"],
-        "Firewall events track network traffic and blocking decisions"
+        "Firewall events track network traffic and blocking decisions",
     ),
     "proxy": (
         ["_ip", "_domain"],
-        "Proxy logs track client IPs accessing domains through the proxy"
+        "Proxy logs track client IPs accessing domains through the proxy",
     ),
     "webserver": (
         ["_ip", "_hostname"],
-        "Web server logs track client IPs accessing server hosts"
+        "Web server logs track client IPs accessing server hosts",
     ),
-
     # ===== Registry Categories =====
     "registry_event": (
         ["_hostname", "_username"],
-        "Registry modifications track which user on which host made changes"
+        "Registry modifications track which user on which host made changes",
     ),
-    "registry_add": (
-        ["_hostname", "_username"],
-        "Registry key additions"
-    ),
-    "registry_delete": (
-        ["_hostname", "_username"],
-        "Registry key deletions"
-    ),
-    "registry_set": (
-        ["_hostname", "_username"],
-        "Registry value modifications"
-    ),
-    "registry_rename": (
-        ["_hostname", "_username"],
-        "Registry key renames"
-    ),
-
+    "registry_add": (["_hostname", "_username"], "Registry key additions"),
+    "registry_delete": (["_hostname", "_username"], "Registry key deletions"),
+    "registry_set": (["_hostname", "_username"], "Registry value modifications"),
+    "registry_rename": (["_hostname", "_username"], "Registry key renames"),
     # ===== Authentication/Identity Categories =====
     "authentication": (
         ["_hostname", "_ip", "_username"],
-        "Authentication events track which users are logging in from where"
+        "Authentication events track which users are logging in from where",
     ),
-
     # ===== DLL/Driver Categories =====
     "image_load": (
         ["_hostname", "_username"],
-        "DLL/image loading tracks which user on which host loaded libraries"
+        "DLL/image loading tracks which user on which host loaded libraries",
     ),
     "driver_load": (
         ["_hostname", "_file"],
-        "Driver loading events track which drivers are loaded on which hosts"
+        "Driver loading events track which drivers are loaded on which hosts",
     ),
-
     # ===== WMI/PowerShell Categories =====
     "wmi_event": (
         ["_hostname", "_username"],
-        "WMI events track which users execute WMI operations on which hosts"
+        "WMI events track which users execute WMI operations on which hosts",
     ),
-    "ps_script": (
-        ["_hostname", "_username"],
-        "PowerShell script execution tracking"
-    ),
-    "ps_module": (
-        ["_hostname", "_username"],
-        "PowerShell module loading tracking"
-    ),
+    "ps_script": (["_hostname", "_username"], "PowerShell script execution tracking"),
+    "ps_module": (["_hostname", "_username"], "PowerShell module loading tracking"),
     "ps_classic_script": (
         ["_hostname", "_username"],
-        "Classic PowerShell script execution"
+        "Classic PowerShell script execution",
     ),
     "ps_classic_start": (
         ["_hostname", "_username"],
-        "Classic PowerShell process start"
+        "Classic PowerShell process start",
     ),
     "ps_classic_provider_start": (
         ["_hostname", "_username"],
-        "Classic PowerShell provider initialization"
+        "Classic PowerShell provider initialization",
     ),
-
     # ===== Pipe/IPC Categories =====
     "pipe_created": (
         ["_hostname", "_username"],
-        "Named pipe creation for IPC tracking"
+        "Named pipe creation for IPC tracking",
     ),
-
     # ===== Clipboard/Data Categories =====
     "clipboard_capture": (
         ["_hostname", "_username"],
-        "Clipboard capture events track data exfiltration attempts"
+        "Clipboard capture events track data exfiltration attempts",
     ),
-
     # ===== Security/AV Categories =====
     "antivirus": (
         ["_hostname", "_file"],
-        "Antivirus detections identify threats on specific hosts"
+        "Antivirus detections identify threats on specific hosts",
     ),
-
     # ===== Application Categories =====
     "application": (
         ["_username"],
-        "Application logs track user actions in SaaS/application environments"
+        "Application logs track user actions in SaaS/application environments",
     ),
-
     # ===== Database Categories =====
     "database": (
         ["_hostname", "_username"],
-        "Database query logs track which users execute queries on which DB servers"
+        "Database query logs track which users execute queries on which DB servers",
     ),
-
     # ===== Sysmon Status Categories =====
-    "sysmon_status": (
-        ["_hostname"],
-        "Sysmon operational status events"
-    ),
-    "sysmon_error": (
-        ["_hostname"],
-        "Sysmon error events"
-    ),
-
+    "sysmon_status": (["_hostname"], "Sysmon operational status events"),
+    "sysmon_error": (["_hostname"], "Sysmon error events"),
     # ===== Stream/Alternate Data Categories =====
     "create_stream_hash": (
         ["_hostname", "_file"],
-        "Alternate data stream creation tracking"
+        "Alternate data stream creation tracking",
     ),
-
     # ===== Raw Access Categories =====
     "raw_access_thread": (
         ["_hostname", "_username"],
-        "Raw disk access attempts tracking"
+        "Raw disk access attempts tracking",
     ),
 }
 
@@ -269,10 +222,7 @@ def get_entities_for_category(category: str) -> List[Dict[str, str]]:
 
     entity_types, _rationale = CATEGORY_ENTITY_PATTERNS[category]
     return [
-        {
-            "entity_type": entity_type,
-            "expression": ENTITY_TYPE_TO_FIELD[entity_type]
-        }
+        {"entity_type": entity_type, "expression": ENTITY_TYPE_TO_FIELD[entity_type]}
         for entity_type in entity_types
         if entity_type in ENTITY_TYPE_TO_FIELD
     ]

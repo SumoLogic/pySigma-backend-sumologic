@@ -29,7 +29,7 @@ class VendorProductMapper:
         cls,
         product: Optional[str],
         service: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
     ) -> Tuple[Optional[str], Optional[str], Optional[str], Optional[str]]:
         """
         Get CSE vendor, product, pattern type, and source classification for a Sigma logsource.
@@ -86,7 +86,7 @@ class VendorProductMapper:
         cls,
         product: Optional[str],
         service: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
     ) -> Optional[str]:
         """
         Get source classification for entity selection.
@@ -108,7 +108,9 @@ class VendorProductMapper:
         Returns:
             Source classification string or None if not found
         """
-        vendor, product_name, pattern_type, classification = cls.get_vendor_product(product, service, category)
+        vendor, product_name, pattern_type, classification = cls.get_vendor_product(
+            product, service, category
+        )
         return classification
 
     @classmethod
@@ -116,7 +118,7 @@ class VendorProductMapper:
         cls,
         product: Optional[str],
         service: Optional[str] = None,
-        category: Optional[str] = None
+        category: Optional[str] = None,
     ) -> bool:
         """
         Check if a CSE parser exists for this Sigma logsource.

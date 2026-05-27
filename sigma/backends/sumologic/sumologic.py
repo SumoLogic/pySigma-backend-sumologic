@@ -147,7 +147,10 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Load CSE schema for field type checking
         from sigma.pipelines.sumologic.schema_loader import SchemaLoader
-        self.schema = SchemaLoader.load(schema_path)  # Uses bundled schema if path is None
+
+        self.schema = SchemaLoader.load(
+            schema_path
+        )  # Uses bundled schema if path is None
 
     def escape_and_quote_field(self, field_name: str) -> str:
         """
@@ -181,15 +184,15 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Check if this looks like a vendor-specific field
         # Indicators: contains dots (nested structure), camelCase with dots, etc.
         is_vendor_specific = (
-            '.' in field_name or  # Nested structure: auditType.category
-            field_name.startswith('EventData.') or  # Windows EventData
-            field_name.startswith('fields.')  # Already wrapped
+            "." in field_name  # Nested structure: auditType.category
+            or field_name.startswith("EventData.")  # Windows EventData
+            or field_name.startswith("fields.")  # Already wrapped
         )
 
         if is_vendor_specific:
             # Wrap in fields[] syntax
             # Remove 'fields.' prefix if already present
-            if field_name.startswith('fields.'):
+            if field_name.startswith("fields."):
                 field_name = field_name[7:]  # Remove "fields."
 
             return f"fields['{field_name}']"
@@ -253,7 +256,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
         from sigma.types import SigmaString
         from typing import cast
 
-        if not all(isinstance(arg, ConditionFieldEqualsValueExpression) for arg in cond.args):
+        if not all(
+            isinstance(arg, ConditionFieldEqualsValueExpression) for arg in cond.args
+        ):
             return super().convert_condition_as_in_expression(cond, state)
 
         field_name = cast(ConditionFieldEqualsValueExpression, cond.args[0]).field
@@ -283,11 +288,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         return self.field_in_list_expression.format(
             field=self.escape_and_quote_field(field_name),
-            list=self.list_separator.join(values)
+            list=self.list_separator.join(values),
         )
 
     def convert_condition_field_eq_field(self, cond, state: ConversionState):
         from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+
         raise SigmaFeatureNotSupportedByBackendError(
             "Field reference expressions (field-to-field comparisons) are not supported by the Sumo Logic CSE backend."
         )
@@ -313,18 +319,18 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Try to extract the detection item name from the parent chain
         detection_name = "keywords"  # default
-        if hasattr(cond, 'parent') and cond.parent:
+        if hasattr(cond, "parent") and cond.parent:
             parent = cond.parent
             # Walk up to find the detection name
             while parent:
-                if hasattr(parent, 'parent') and hasattr(parent.parent, 'detections'):
+                if hasattr(parent, "parent") and hasattr(parent.parent, "detections"):
                     # Found the SigmaDetections object, search for this detection
                     for name, detection in parent.parent.detections.items():
                         if detection == parent:
                             detection_name = name
                             break
                     break
-                parent = getattr(parent, 'parent', None)
+                parent = getattr(parent, "parent", None)
 
         error_msg += f"    {detection_name}:\n"
 
@@ -332,16 +338,21 @@ class SumoLogicCSEBackend(TextQueryBackend):
         values_to_show = [cond_value]  # Default to current value
 
         # Walk up parent chain: ConditionValueExpression -> ConditionOR -> SigmaDetection -> detection_items
-        if hasattr(cond, 'parent') and cond.parent:
+        if hasattr(cond, "parent") and cond.parent:
             parent = cond.parent
             # If parent is ConditionOR/ConditionAND, go up one more level to SigmaDetection
-            if hasattr(parent, 'parent') and parent.parent:
+            if hasattr(parent, "parent") and parent.parent:
                 sigma_detection = parent.parent
                 # SigmaDetection has detection_items
-                if hasattr(sigma_detection, 'detection_items') and sigma_detection.detection_items:
+                if (
+                    hasattr(sigma_detection, "detection_items")
+                    and sigma_detection.detection_items
+                ):
                     # Get the first (usually only) detection item
                     detection_item = sigma_detection.detection_items[0]
-                    if hasattr(detection_item, 'value') and isinstance(detection_item.value, list):
+                    if hasattr(detection_item, "value") and isinstance(
+                        detection_item.value, list
+                    ):
                         values_to_show = detection_item.value
 
         for val in values_to_show:
@@ -427,7 +438,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # First handle quoted values
         query = re.sub(r'metadata_deviceEventId="(\d+)"', replace_single_quoted, query)
         # Then handle unquoted values (for backwards compatibility)
-        query = re.sub(r'metadata_deviceEventId=(\d+)', replace_single_quoted, query)
+        query = re.sub(r"metadata_deviceEventId=(\d+)", replace_single_quoted, query)
 
         # Pattern 2: In list (metadata_deviceEventId in ("4624", "4625") or in (4624, 4625))
         def replace_list(match):
@@ -438,7 +449,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             transformed_ids = [f'"{channel}-{eid}"' for eid in event_ids]
             return f'metadata_deviceEventId in ({", ".join(transformed_ids)})'
 
-        query = re.sub(r'metadata_deviceEventId in \(([^)]+)\)', replace_list, query)
+        query = re.sub(r"metadata_deviceEventId in \(([^)]+)\)", replace_list, query)
 
         return query
 
@@ -473,9 +484,15 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Get vendor/product mapping
         mapping = VendorProductMapper.get_vendor_product(
-            product=rule.logsource.product if hasattr(rule.logsource, 'product') else None,
-            service=rule.logsource.service if hasattr(rule.logsource, 'service') else None,
-            category=rule.logsource.category if hasattr(rule.logsource, 'category') else None
+            product=(
+                rule.logsource.product if hasattr(rule.logsource, "product") else None
+            ),
+            service=(
+                rule.logsource.service if hasattr(rule.logsource, "service") else None
+            ),
+            category=(
+                rule.logsource.category if hasattr(rule.logsource, "category") else None
+            ),
         )
 
         vendor, product, pattern_type, classification = mapping
@@ -484,9 +501,13 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if vendor is None or product is None:
             # Track unmapped logsource for confidence metadata
             self._unmapped_logsource = {
-                "product": rule.logsource.product if hasattr(rule.logsource, 'product') else None,
-                "service": getattr(rule.logsource, 'service', None),
-                "category": getattr(rule.logsource, 'category', None),
+                "product": (
+                    rule.logsource.product
+                    if hasattr(rule.logsource, "product")
+                    else None
+                ),
+                "service": getattr(rule.logsource, "service", None),
+                "category": getattr(rule.logsource, "category", None),
             }
             # Return query without metadata filters - don't inject invalid metadata_vendor="None"
             return query
@@ -503,10 +524,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # fields (EventID, EventData.*, Channel, etc.). Rules using only normalized Sigma
         # taxonomy fields rely on normalized sources and don't need vendor/product scoping.
         if vendor == "Microsoft" and product == "Windows":
-            has_vendor_fields = (
-                "metadata_deviceEventId" in query
-                or "fields[" in query
-            )
+            has_vendor_fields = "metadata_deviceEventId" in query or "fields[" in query
             if not has_vendor_fields:
                 return query
 
@@ -572,24 +590,14 @@ class SumoLogicCSEBackend(TextQueryBackend):
         for sigma_field, cse_field in metadata_fields.items():
             # Replace field name in various contexts:
             # 1. Equality: Provider_Name="value"
-            query = re.sub(
-                rf'\b{sigma_field}=',
-                f'{cse_field}=',
-                query
-            )
+            query = re.sub(rf"\b{sigma_field}=", f"{cse_field}=", query)
 
             # 2. In operator: Provider_Name in (...)
-            query = re.sub(
-                rf'\b{sigma_field}\s+in\s+',
-                f'{cse_field} in ',
-                query
-            )
+            query = re.sub(rf"\b{sigma_field}\s+in\s+", f"{cse_field} in ", query)
 
             # 3. Matches operator: Provider_Name matches /pattern/
             query = re.sub(
-                rf'\b{sigma_field}\s+matches\s+',
-                f'{cse_field} matches ',
-                query
+                rf"\b{sigma_field}\s+matches\s+", f"{cse_field} matches ", query
             )
 
         return query
@@ -618,9 +626,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         has_product = rule.logsource.product is not None
         has_service = rule.logsource.service is not None
         has_only_category = (
-            rule.logsource.category is not None
-            and not has_product
-            and not has_service
+            rule.logsource.category is not None and not has_product and not has_service
         )
 
         # Only process vendor-specific logsources (not generic categories)
@@ -629,22 +635,31 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Check if this is a Windows logsource
         is_windows = (
-            rule.logsource.product and
-            rule.logsource.product.lower() == 'windows'
+            rule.logsource.product and rule.logsource.product.lower() == "windows"
         )
 
         # Windows Event Log header/system fields that should NOT get EventData. prefix
         # These appear before the EventData body in Windows Event Logs
         WINDOWS_HEADER_FIELDS = {
-            'Channel', 'Computer', 'EventID', 'EventRecordID',
-            'Execution', 'Keywords', 'Level', 'Opcode',
-            'Provider', 'Security', 'Task', 'TimeCreated', 'Version'
+            "Channel",
+            "Computer",
+            "EventID",
+            "EventRecordID",
+            "Execution",
+            "Keywords",
+            "Level",
+            "Opcode",
+            "Provider",
+            "Security",
+            "Task",
+            "TimeCreated",
+            "Version",
         }
 
         # Find all bare field names (not already in fields[] syntax, not metadata fields)
         # Pattern: field name at word boundary, followed by operator (=, in, matches, etc.)
         # Exclude: metadata_, fields[, already wrapped fields
-        field_pattern = r'\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_\.]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))'
+        field_pattern = r"\b(?!metadata_|fields\[)([a-zA-Z_][a-zA-Z0-9_\.]*)\b(?=\s*(?:=|!=|in\s|matches\s|<|>|<=|>=))"
 
         def wrap_if_not_in_schema(match):
             field_name = match.group(1)
@@ -654,17 +669,17 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 return field_name
 
             # Don't wrap boolean operators
-            if field_name.upper() in ('AND', 'OR', 'NOT'):
+            if field_name.upper() in ("AND", "OR", "NOT"):
                 return field_name
 
             # Don't wrap CSIEM functions
-            if field_name in ('isEmpty',):
+            if field_name in ("isEmpty",):
                 return field_name
 
             # For Windows logsources, check if it's a header field
             if is_windows:
                 # Check if this is a Windows header field (base name or dotted like Provider.Name)
-                base_field = field_name.split('.')[0]
+                base_field = field_name.split(".")[0]
                 if base_field in WINDOWS_HEADER_FIELDS:
                     # Windows header field - wrap as-is without EventData prefix
                     return f"fields['{field_name}']"
@@ -686,9 +701,11 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 result_parts.append(segment)
             else:
                 # Outside quotes — apply field wrapping
-                result_parts.append(re.sub(field_pattern, wrap_if_not_in_schema, segment))
+                result_parts.append(
+                    re.sub(field_pattern, wrap_if_not_in_schema, segment)
+                )
 
-        return ''.join(result_parts)
+        return "".join(result_parts)
 
     def finalize_query_default(
         self, rule: SigmaRule, query: str, index: int, state: ConversionState
@@ -697,6 +714,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         Finalize query and create rule JSON metadata.
         Also clean up unnecessary quotes in regex expressions and escape special chars.
         """
+
         # Escape special regex characters in values before removing quotes
         # CSE uses / as regex delimiter, so literal / must be escaped as \/
         # Also escape . to match literal dots, not "any character"
@@ -726,23 +744,23 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Fix NOT operator formatting - remove space after !
         # Cloud SIEM requires !(expr) or !field, not ! (expr) or ! field
-        query = re.sub(r'!\s+', '!', query)
+        query = re.sub(r"!\s+", "!", query)
 
         # Fix comparison operator spacing for consistency
         # Standardize to no spaces around operators: field=value, field>=value
         # This matches the = operator formatting and keeps expressions compact
         # Only apply outside regex literals (matches /.../) to avoid corrupting patterns
         def _strip_operator_spaces(q: str) -> str:
-            parts = re.split(r'(matches\s*/[^/]*/)', q)
+            parts = re.split(r"(matches\s*/[^/]*/)", q)
             for i, part in enumerate(parts):
-                if not part.startswith('matches'):
-                    part = re.sub(r'\s*>=\s*', '>=', part)
-                    part = re.sub(r'\s*<=\s*', '<=', part)
-                    part = re.sub(r'\s*!=\s*', '!=', part)
-                    part = re.sub(r'\s*>\s*', '>', part)
-                    part = re.sub(r'\s*<\s*', '<', part)
+                if not part.startswith("matches"):
+                    part = re.sub(r"\s*>=\s*", ">=", part)
+                    part = re.sub(r"\s*<=\s*", "<=", part)
+                    part = re.sub(r"\s*!=\s*", "!=", part)
+                    part = re.sub(r"\s*>\s*", ">", part)
+                    part = re.sub(r"\s*<\s*", "<", part)
                     parts[i] = part
-            return ''.join(parts)
+            return "".join(parts)
 
         query = _strip_operator_spaces(query)
 
@@ -849,7 +867,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             "default": risk_score,
             "type": "constant",
             "field": None,
-            "mapping": []
+            "mapping": [],
         }
 
         # Add tags array with normalized MITRE tags
@@ -864,14 +882,21 @@ class SumoLogicCSEBackend(TextQueryBackend):
             confidence_metadata = self._collect_confidence_metadata(rule)
 
             # Check confidence threshold
-            if confidence_metadata["overall_score"] < confidence_metadata["threshold_used"]:
+            if (
+                confidence_metadata["overall_score"]
+                < confidence_metadata["threshold_used"]
+            ):
                 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+
                 error_msg = self._build_confidence_error_message(confidence_metadata)
                 raise SigmaFeatureNotSupportedByBackendError(error_msg)
 
             # Check for unmapped logsource if strict mode enabled
-            if self.fail_on_unmapped_logsource and not confidence_metadata.get("has_vendor_mapping", True):
+            if self.fail_on_unmapped_logsource and not confidence_metadata.get(
+                "has_vendor_mapping", True
+            ):
                 from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+
                 unmapped = confidence_metadata.get("unmapped_logsource", {})
                 raise SigmaFeatureNotSupportedByBackendError(
                     f"Conversion blocked: No vendor/product mapping found for logsource "
@@ -898,7 +923,11 @@ class SumoLogicCSEBackend(TextQueryBackend):
         used_fields = set()
 
         # Traverse detection items to collect field names
-        if hasattr(rule, "detection") and rule.detection and hasattr(rule.detection, "detections"):
+        if (
+            hasattr(rule, "detection")
+            and rule.detection
+            and hasattr(rule.detection, "detections")
+        ):
             for detection_name, detection in rule.detection.detections.items():
                 if hasattr(detection, "detection_items"):
                     for item in detection.detection_items:
@@ -929,7 +958,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         """
         from sigma.pipelines.sumologic.category_entity_mapping import (
             get_entities_for_category,
-            has_entity_mapping
+            has_entity_mapping,
         )
 
         # Get entity selectors that were actually assigned
@@ -983,10 +1012,14 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Build reverse mapping from CSE field → Sigma field
         cse_to_sigma = {}
-        if self.last_processing_pipeline and hasattr(self.last_processing_pipeline, "items"):
+        if self.last_processing_pipeline and hasattr(
+            self.last_processing_pipeline, "items"
+        ):
             for item in self.last_processing_pipeline.items:
-                if hasattr(rule, "applied_processing_items") and \
-                   item.identifier not in rule.applied_processing_items:
+                if (
+                    hasattr(rule, "applied_processing_items")
+                    and item.identifier not in rule.applied_processing_items
+                ):
                     continue
                 transformation = item.transformation
                 if isinstance(transformation, ConfidenceAwareFieldMapping):
@@ -996,11 +1029,15 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Extract confidence from pipeline transformations
         # IMPORTANT: Only include transformations that were actually applied to this rule
-        if self.last_processing_pipeline and hasattr(self.last_processing_pipeline, "items"):
+        if self.last_processing_pipeline and hasattr(
+            self.last_processing_pipeline, "items"
+        ):
             for item in self.last_processing_pipeline.items:
                 # Skip transformations that weren't applied to this specific rule
-                if hasattr(rule, "applied_processing_items") and \
-                   item.identifier not in rule.applied_processing_items:
+                if (
+                    hasattr(rule, "applied_processing_items")
+                    and item.identifier not in rule.applied_processing_items
+                ):
                     continue
 
                 transformation = item.transformation
@@ -1026,9 +1063,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
         unmapped_fields = used_cse_fields - mapped_fields
 
         # Determine if this is a vendor-specific logsource where pass-through is expected
-        is_vendor_specific = (
-            rule.logsource and
-            (rule.logsource.product is not None or rule.logsource.service is not None)
+        is_vendor_specific = rule.logsource and (
+            rule.logsource.product is not None or rule.logsource.service is not None
         )
 
         if unmapped_fields:
@@ -1036,41 +1072,51 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 if is_vendor_specific:
                     # Vendor-specific pass-through: field goes to fields['x'] — correct behavior
                     all_confidences.append(0.8)
-                    all_field_mappings.append({
-                        "sigma_field": field,
-                        "cse_field": field,
-                        "confidence": 0.8,
-                        "factors": {
-                            "semantic_similarity": 1.0,
-                            "data_preservation": 1.0,
-                            "type_compatibility": 1.0,
-                            "field_specificity": 0.8,
-                        },
-                        "warnings": ["Vendor-specific pass-through (fields[] wrapped)"],
-                    })
+                    all_field_mappings.append(
+                        {
+                            "sigma_field": field,
+                            "cse_field": field,
+                            "confidence": 0.8,
+                            "factors": {
+                                "semantic_similarity": 1.0,
+                                "data_preservation": 1.0,
+                                "type_compatibility": 1.0,
+                                "field_specificity": 0.8,
+                            },
+                            "warnings": [
+                                "Vendor-specific pass-through (fields[] wrapped)"
+                            ],
+                        }
+                    )
                 else:
                     # Generic logsource with unmapped field — genuinely uncertain
                     warning = f"Field '{field}' is not mapped to CSE schema and may not exist in Cloud SIEM logs"
                     warnings_list.append(warning)
                     all_confidences.append(0.0)
-                    all_field_mappings.append({
-                        "sigma_field": field,
-                        "cse_field": field,
-                        "confidence": 0.0,
-                        "factors": {
-                            "semantic_similarity": 0.0,
-                            "data_preservation": 0.0,
-                            "type_compatibility": 0.0,
-                            "field_specificity": 0.0,
-                        },
-                        "warnings": [f"UNMAPPED: Field '{field}' is not in any CSE schema mapping"],
-                    })
+                    all_field_mappings.append(
+                        {
+                            "sigma_field": field,
+                            "cse_field": field,
+                            "confidence": 0.0,
+                            "factors": {
+                                "semantic_similarity": 0.0,
+                                "data_preservation": 0.0,
+                                "type_compatibility": 0.0,
+                                "field_specificity": 0.0,
+                            },
+                            "warnings": [
+                                f"UNMAPPED: Field '{field}' is not in any CSE schema mapping"
+                            ],
+                        }
+                    )
 
         # Compute overall confidence (weighted average)
         if all_confidences:
             overall_score = sum(all_confidences) / len(all_confidences)
         else:
-            overall_score = 1.0  # No mappings = full confidence (rule has no field filters)
+            overall_score = (
+                1.0  # No mappings = full confidence (rule has no field filters)
+            )
 
         # Check entity selector coverage
         # Rules should have entity selectors when they have meaningful log source context
@@ -1091,7 +1137,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             overall_score = overall_score * 0.9
 
         # Check for unmapped logsource (no vendor/product mapping found)
-        unmapped_logsource = getattr(self, '_unmapped_logsource', None)
+        unmapped_logsource = getattr(self, "_unmapped_logsource", None)
         if unmapped_logsource:
             logsource_str = (
                 f"product={unmapped_logsource['product']}, "
@@ -1128,7 +1174,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
             "unmapped_logsource": unmapped_logsource,
         }
 
-    def _build_confidence_error_message(self, confidence_metadata: Dict[str, Any]) -> str:
+    def _build_confidence_error_message(
+        self, confidence_metadata: Dict[str, Any]
+    ) -> str:
         """
         Build detailed error message for confidence threshold failures.
 
@@ -1158,10 +1206,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 factors = mapping["factors"]
 
                 msg.append(f"  - {sigma_field} → {cse_field}: {conf:.3f}")
-                msg.append(f"    Factors: semantic={factors['semantic_similarity']:.2f}, "
-                          f"data_pres={factors['data_preservation']:.2f}, "
-                          f"type={factors['type_compatibility']:.2f}, "
-                          f"specificity={factors['field_specificity']:.2f}")
+                msg.append(
+                    f"    Factors: semantic={factors['semantic_similarity']:.2f}, "
+                    f"data_pres={factors['data_preservation']:.2f}, "
+                    f"type={factors['type_compatibility']:.2f}, "
+                    f"specificity={factors['field_specificity']:.2f}"
+                )
 
         # Add warnings if any
         if confidence_metadata["warnings"]:
@@ -1171,7 +1221,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 msg.append(f"  - {warning}")
 
         msg.append("")
-        msg.append(f"To allow this conversion: Use -O min_confidence={overall - 0.05:.2f} or lower")
+        msg.append(
+            f"To allow this conversion: Use -O min_confidence={overall - 0.05:.2f} or lower"
+        )
 
         return "\n".join(msg)
 
@@ -1378,8 +1430,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
             List of entity selector dictionaries (empty if cannot determine confidently)
         """
         from sigma.pipelines.sumologic.vendor_product_mapping import VendorProductMapper
-        from sigma.pipelines.sumologic.entity_classification import get_entities_for_classification
-        from sigma.pipelines.sumologic.category_entity_mapping import get_entities_for_category
+        from sigma.pipelines.sumologic.entity_classification import (
+            get_entities_for_classification,
+        )
+        from sigma.pipelines.sumologic.category_entity_mapping import (
+            get_entities_for_category,
+        )
 
         entity_selectors = []
 
@@ -1404,7 +1460,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 return entities
 
         # Priority 2: Classification-based (uses metadata from vendor_product_mapping)
-        classification = VendorProductMapper.get_source_classification(product, service, category)
+        classification = VendorProductMapper.get_source_classification(
+            product, service, category
+        )
         if classification:
             return get_entities_for_classification(classification)
 
@@ -1477,7 +1535,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Find the first MITRE tactic tag and extract its ID
         for tag in mitre_tags:
             if tag.startswith("_mitreAttackTactic:"):
-                tactic_id = tag.split(":", 1)[1]  # Extract "TA0002" from "_mitreAttackTactic:TA0002"
+                tactic_id = tag.split(":", 1)[
+                    1
+                ]  # Extract "TA0002" from "_mitreAttackTactic:TA0002"
                 return TACTIC_ID_TO_CATEGORY.get(tactic_id, self.DEFAULT_CATEGORY)
 
         # No tactic tag found

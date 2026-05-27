@@ -21,33 +21,33 @@ from typing import Dict, List
 # Each classification defines which entity types are appropriate for that source category
 CLASSIFICATION_ENTITY_PATTERNS: Dict[str, List[str]] = {
     "endpoint": [
-        "_hostname",    # device_hostname (primary - the endpoint itself)
-        "_username",    # user_username (user logged into endpoint)
-        "_process",     # baseImage (if process activity is captured)
+        "_hostname",  # device_hostname (primary - the endpoint itself)
+        "_username",  # user_username (user logged into endpoint)
+        "_process",  # baseImage (if process activity is captured)
     ],
     "identity": [
-        "_username",    # user_username (primary - the authenticating user)
-        "_ip",          # srcDevice_ip (client IP address)
+        "_username",  # user_username (primary - the authenticating user)
+        "_ip",  # srcDevice_ip (client IP address)
     ],
     "cloud_audit": [
-        "_username",    # user_username (primary - IAM principal/service account)
-        "_ip",          # srcDevice_ip (API call origin IP)
+        "_username",  # user_username (primary - IAM principal/service account)
+        "_ip",  # srcDevice_ip (API call origin IP)
     ],
     "network": [
-        "_hostname",    # device_hostname (firewall/network device itself)
-        "_ip",          # srcDevice_ip (source of traffic)
+        "_hostname",  # device_hostname (firewall/network device itself)
+        "_ip",  # srcDevice_ip (source of traffic)
     ],
     "application": [
-        "_username",    # user_username (primary - application user)
-        "_ip",          # srcDevice_ip (optional - client IP if available)
+        "_username",  # user_username (primary - application user)
+        "_ip",  # srcDevice_ip (optional - client IP if available)
     ],
     "cloud_infrastructure": [
-        "_ip",          # srcDevice_ip or device_ip (primary - resource IP)
+        "_ip",  # srcDevice_ip or device_ip (primary - resource IP)
     ],
     "security_tool": [
-        "_hostname",    # device_hostname (protected endpoint)
-        "_username",    # user_username (user context if available)
-        "_file",        # file_path (malware/threat file context)
+        "_hostname",  # device_hostname (protected endpoint)
+        "_username",  # user_username (user context if available)
+        "_file",  # file_path (malware/threat file context)
     ],
 }
 
@@ -103,10 +103,7 @@ def get_entities_for_classification(classification: str) -> List[Dict[str, str]]
 
     entity_types = CLASSIFICATION_ENTITY_PATTERNS[classification]
     return [
-        {
-            "entity_type": entity_type,
-            "expression": ENTITY_TYPE_TO_FIELD[entity_type]
-        }
+        {"entity_type": entity_type, "expression": ENTITY_TYPE_TO_FIELD[entity_type]}
         for entity_type in entity_types
         if entity_type in ENTITY_TYPE_TO_FIELD
     ]
