@@ -15,6 +15,7 @@ from dataclasses import dataclass
 @dataclass
 class FieldSchema:
     """Represents a single CSE schema field with its metadata."""
+
     field_name: str
     description: str
     field_type: str  # string, int, long, etc.
@@ -28,8 +29,15 @@ class FieldSchema:
         Check if this is a general-purpose field (action, description, resource).
         General-purpose fields are penalized in specificity scoring.
         """
-        general_fields = {"action", "description", "resource", "resourceType",
-                         "application", "normalizedAction", "normalizedResource"}
+        general_fields = {
+            "action",
+            "description",
+            "resource",
+            "resourceType",
+            "application",
+            "normalizedAction",
+            "normalizedResource",
+        }
         return self.field_name in general_fields
 
     def get_keywords(self) -> Set[str]:
@@ -40,16 +48,17 @@ class FieldSchema:
         keywords = set()
 
         # Tokenize field name (split on underscores, camelCase)
-        name_tokens = self.field_name.replace('_', ' ')
+        name_tokens = self.field_name.replace("_", " ")
         # Split camelCase: device_hostname -> device hostname
         import re
-        name_tokens = re.sub(r'([a-z])([A-Z])', r'\1 \2', name_tokens)
+
+        name_tokens = re.sub(r"([a-z])([A-Z])", r"\1 \2", name_tokens)
         keywords.update(name_tokens.lower().split())
 
         # Tokenize description (first sentence is most relevant)
         if self.description:
-            first_sentence = self.description.split('.')[0]
-            desc_tokens = re.findall(r'\b\w+\b', first_sentence.lower())
+            first_sentence = self.description.split(".")[0]
+            desc_tokens = re.findall(r"\b\w+\b", first_sentence.lower())
             keywords.update(desc_tokens)
 
         return keywords
@@ -139,6 +148,7 @@ class SchemaLoader:
                 return path
             else:
                 import warnings
+
                 warnings.warn(f"Explicit schema path not found: {explicit_path}")
                 return None
 
@@ -150,6 +160,7 @@ class SchemaLoader:
                 return path
             else:
                 import warnings
+
                 warnings.warn(f"SUMOLOGIC_CSE_SCHEMA_PATH not found: {env_path}")
 
         # Priority 3: Bundled schema
@@ -159,6 +170,7 @@ class SchemaLoader:
 
         # No schema found - will skip validation
         import warnings
+
         warnings.warn(
             "CSE schema file (descriptions.yaml) not found. "
             "Confidence scoring will work but schema validation will be skipped. "
@@ -167,7 +179,9 @@ class SchemaLoader:
         return None
 
     @classmethod
-    def load(cls, schema_path: Optional[str] = None, force_reload: bool = False) -> Optional[SchemaIndex]:
+    def load(
+        cls, schema_path: Optional[str] = None, force_reload: bool = False
+    ) -> Optional[SchemaIndex]:
         """
         Load and parse CSE schema from YAML.
 
@@ -189,34 +203,36 @@ class SchemaLoader:
 
         # Parse YAML
         try:
-            with open(resolved_path, 'r') as f:
+            with open(resolved_path, "r") as f:
                 # descriptions.yaml is a stream of documents (----separated)
                 docs = list(yaml.safe_load_all(f))
 
             # Build field index
             fields = {}
             for doc in docs:
-                if not doc or 'field_name' not in doc:
+                if not doc or "field_name" not in doc:
                     continue
 
-                field_name = doc['field_name']
+                field_name = doc["field_name"]
 
                 # Parse related_attributes (can be dict or None)
                 related_attrs = {}
-                if 'related_attributes' in doc and doc['related_attributes']:
-                    related_attrs = doc['related_attributes']
+                if "related_attributes" in doc and doc["related_attributes"]:
+                    related_attrs = doc["related_attributes"]
 
                 # Parse example_usage
-                example_usage = doc.get('example_usage', [])
+                example_usage = doc.get("example_usage", [])
 
                 field = FieldSchema(
                     field_name=field_name,
-                    description=doc.get('description', '').strip(),
-                    field_type=str(doc.get('type', 'string')),
-                    entity_type=doc.get('entity_type', ''),
-                    enrichment_attribute=doc.get('enrichment_attribute', False),
+                    description=doc.get("description", "").strip(),
+                    field_type=str(doc.get("type", "string")),
+                    entity_type=doc.get("entity_type", ""),
+                    enrichment_attribute=doc.get("enrichment_attribute", False),
                     related_attributes=related_attrs,
-                    example_usage=example_usage if isinstance(example_usage, list) else []
+                    example_usage=(
+                        example_usage if isinstance(example_usage, list) else []
+                    ),
                 )
 
                 fields[field_name] = field
@@ -232,6 +248,7 @@ class SchemaLoader:
 
         except Exception as e:
             import warnings
+
             warnings.warn(f"Failed to load CSE schema from {resolved_path}: {e}")
             return None  # Graceful degradation
 

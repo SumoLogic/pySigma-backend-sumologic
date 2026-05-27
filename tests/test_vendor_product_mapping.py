@@ -1,6 +1,7 @@
 """
 Tests for vendor/product metadata injection based on CSE parser mappings.
 """
+
 import pytest
 import json
 from sigma.collection import SigmaCollection
@@ -12,15 +13,15 @@ from sigma.pipelines.sumologic import sumologic_cse_pipeline
 def backend():
     """Create backend with pipeline"""
     return SumoLogicCSERuleBackend(
-        processing_pipeline=sumologic_cse_pipeline(),
-        min_confidence=0.0
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
     )
 
 
 def test_windows_sysmon_metadata(backend):
     """Test Windows Sysmon gets correct vendor/product and full EventID."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Sysmon Process Creation
             id: 00000000-0000-0000-0000-000000000001
             status: test
@@ -33,7 +34,8 @@ def test_windows_sysmon_metadata(backend):
                     EventID: 1
                     Image|endswith: '\\powershell.exe'
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -49,7 +51,8 @@ def test_windows_sysmon_metadata(backend):
 def test_windows_security_metadata(backend):
     """Test Windows Security log gets correct channel prefix."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Failed Logon
             id: 00000000-0000-0000-0000-000000000002
             status: test
@@ -60,7 +63,8 @@ def test_windows_security_metadata(backend):
                 sel:
                     EventID: 4625
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -74,7 +78,8 @@ def test_windows_security_metadata(backend):
 def test_aws_cloudtrail_metadata(backend):
     """Test AWS CloudTrail gets correct vendor/product."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: AWS S3 Bucket Deletion
             id: 00000000-0000-0000-0000-000000000003
             status: test
@@ -85,7 +90,8 @@ def test_aws_cloudtrail_metadata(backend):
                 sel:
                     eventName: DeleteBucket
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -98,7 +104,8 @@ def test_aws_cloudtrail_metadata(backend):
 def test_azure_signinlogs_metadata(backend):
     """Test Azure Sign-in logs get correct vendor/product."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Azure Failed Authentication
             id: 00000000-0000-0000-0000-000000000004
             status: test
@@ -109,7 +116,8 @@ def test_azure_signinlogs_metadata(backend):
                 sel:
                     ResultType: '50126'
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -122,7 +130,8 @@ def test_azure_signinlogs_metadata(backend):
 def test_linux_auditd_metadata(backend):
     """Test Linux auditd gets correct vendor/product."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Linux Privileged Command
             id: 00000000-0000-0000-0000-000000000005
             status: test
@@ -134,7 +143,8 @@ def test_linux_auditd_metadata(backend):
                     type: EXECVE
                     a0: sudo
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -147,7 +157,8 @@ def test_linux_auditd_metadata(backend):
 def test_windows_powershell_metadata(backend):
     """Test Windows PowerShell gets correct channel prefix."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: PowerShell Script Block Logging
             id: 00000000-0000-0000-0000-000000000006
             status: test
@@ -158,7 +169,8 @@ def test_windows_powershell_metadata(backend):
                 sel:
                     EventID: 4104
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -172,7 +184,8 @@ def test_windows_powershell_metadata(backend):
 def test_windows_taskscheduler_metadata(backend):
     """Test Windows Task Scheduler gets correct operational channel."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Task Scheduler Event
             id: 00000000-0000-0000-0000-000000000007
             status: test
@@ -183,7 +196,8 @@ def test_windows_taskscheduler_metadata(backend):
                 sel:
                     EventID: 106
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -191,13 +205,17 @@ def test_windows_taskscheduler_metadata(backend):
 
     assert 'metadata_vendor="Microsoft"' in expr
     assert 'metadata_product="Windows"' in expr
-    assert 'metadata_deviceEventId="Microsoft-Windows-TaskScheduler/Operational-106"' in expr
+    assert (
+        'metadata_deviceEventId="Microsoft-Windows-TaskScheduler/Operational-106"'
+        in expr
+    )
 
 
 def test_generic_category_fallback(backend):
     """Test generic category gets fallback vendor/product."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Generic Proxy Rule
             id: 00000000-0000-0000-0000-000000000008
             status: test
@@ -207,7 +225,8 @@ def test_generic_category_fallback(backend):
                 sel:
                     c-uri|contains: malicious
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -221,7 +240,8 @@ def test_generic_category_fallback(backend):
 def test_eventid_list_transformation(backend):
     """Test EventID in list gets proper channel prefixes."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Multiple EventIDs
             id: 00000000-0000-0000-0000-000000000009
             status: test
@@ -235,14 +255,18 @@ def test_eventid_list_transformation(backend):
                         - 4625
                         - 4648
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
     expr = parsed["rules"][0]["expression"]
 
     # All EventIDs should have Security channel prefix
-    assert 'metadata_deviceEventId in ("Security-4624", "Security-4625", "Security-4648")' in expr
+    assert (
+        'metadata_deviceEventId in ("Security-4624", "Security-4625", "Security-4648")'
+        in expr
+    )
 
 
 def test_known_good_mappings_confidence():
@@ -252,7 +276,8 @@ def test_known_good_mappings_confidence():
 
     # Test AWS CloudTrail with eventName → action
     result1 = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: AWS CloudTrail Event
             id: 00000000-0000-0000-0000-000000000010
             status: test
@@ -264,7 +289,8 @@ def test_known_good_mappings_confidence():
                     eventName: DeleteBucket
                     errorCode: Success
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed1 = json.loads(result1[0])
@@ -276,7 +302,8 @@ def test_known_good_mappings_confidence():
 
     # Test exact name match (Action → action)
     result2 = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Firewall Action
             id: 00000000-0000-0000-0000-000000000011
             status: test
@@ -286,7 +313,8 @@ def test_known_good_mappings_confidence():
                 sel:
                     Action: Block
                 condition: sel
-        """)
+        """
+        )
     )
 
     parsed2 = json.loads(result2[0])

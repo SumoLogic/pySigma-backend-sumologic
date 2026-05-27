@@ -4,6 +4,7 @@ Tests for logsource-based vendor field wrapping.
 Vendor-specific logsources (product + service) should wrap unmapped fields.
 Generic categories should use normalized field names without wrapping.
 """
+
 import pytest
 import json
 from sigma.collection import SigmaCollection
@@ -15,15 +16,15 @@ from sigma.pipelines.sumologic import sumologic_cse_pipeline
 def backend():
     """Create backend with pipeline"""
     return SumoLogicCSERuleBackend(
-        processing_pipeline=sumologic_cse_pipeline(),
-        min_confidence=0.0
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
     )
 
 
 def test_vendor_specific_fields_wrapped(backend):
     """Test that vendor-specific logsource wraps unmapped fields."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Cisco Duo MFA Bypass
             id: 00000000-0000-0000-0000-000000000001
             status: test
@@ -35,7 +36,8 @@ def test_vendor_specific_fields_wrapped(backend):
                     event_type: authentication
                     reason: bypass_user
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -52,7 +54,8 @@ def test_vendor_specific_fields_wrapped(backend):
 def test_generic_category_not_wrapped(backend):
     """Test that generic category logsource doesn't wrap normalized fields."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Generic Proxy Rule
             id: 00000000-0000-0000-0000-000000000002
             status: test
@@ -62,7 +65,8 @@ def test_generic_category_not_wrapped(backend):
                 selection:
                     c-uri|contains: malicious
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -76,7 +80,8 @@ def test_generic_category_not_wrapped(backend):
 def test_vendor_with_mapped_fields_not_wrapped(backend):
     """Test that mapped CSE schema fields are not wrapped even in vendor logsource."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Windows Process Creation
             id: 00000000-0000-0000-0000-000000000003
             status: test
@@ -88,7 +93,8 @@ def test_vendor_with_mapped_fields_not_wrapped(backend):
                     Image|endswith: '\\powershell.exe'
                     CommandLine|contains: suspicious
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -104,7 +110,8 @@ def test_vendor_with_mapped_fields_not_wrapped(backend):
 def test_aws_with_unmapped_vendor_fields(backend):
     """Test AWS rule with vendor-specific fields gets wrapped."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: AWS CloudTrail Custom Field
             id: 00000000-0000-0000-0000-000000000004
             status: test
@@ -116,7 +123,8 @@ def test_aws_with_unmapped_vendor_fields(backend):
                     eventName: DeleteBucket
                     customVendorField: suspicious_value
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -133,7 +141,8 @@ def test_aws_with_unmapped_vendor_fields(backend):
 def test_okta_vendor_fields_wrapped(backend):
     """Test Okta-specific fields are wrapped."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Okta Event
             id: 00000000-0000-0000-0000-000000000005
             status: test
@@ -144,7 +153,8 @@ def test_okta_vendor_fields_wrapped(backend):
                     eventType: user.session.start
                     displayMessage: suspicious
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -158,7 +168,8 @@ def test_okta_vendor_fields_wrapped(backend):
 def test_metadata_fields_not_wrapped(backend):
     """Test that metadata fields are never wrapped."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Test Metadata Fields
             id: 00000000-0000-0000-0000-000000000006
             status: test
@@ -169,7 +180,8 @@ def test_metadata_fields_not_wrapped(backend):
                 selection:
                     EventID: 4624
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])
@@ -188,7 +200,8 @@ def test_metadata_fields_not_wrapped(backend):
 def test_mixed_vendor_and_schema_fields(backend):
     """Test rule with both vendor-specific and CSE schema fields."""
     result = backend.convert(
-        SigmaCollection.from_yaml("""
+        SigmaCollection.from_yaml(
+            """
             title: Mixed Fields
             id: 00000000-0000-0000-0000-000000000007
             status: test
@@ -201,7 +214,8 @@ def test_mixed_vendor_and_schema_fields(backend):
                     properties.customField: suspicious
                     user_username: admin
                 condition: selection
-        """)
+        """
+        )
     )
 
     parsed = json.loads(result[0])

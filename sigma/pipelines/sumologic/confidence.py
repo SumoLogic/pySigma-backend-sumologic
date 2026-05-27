@@ -24,6 +24,7 @@ WEIGHT_FIELD_SPECIFICITY = 0.15
 @dataclass
 class ConfidenceFactors:
     """Individual confidence factor scores."""
+
     semantic_similarity: float
     data_preservation: float
     type_compatibility: float
@@ -42,6 +43,7 @@ class ConfidenceFactors:
 @dataclass
 class ConfidenceScore:
     """Complete confidence score for a field mapping."""
+
     sigma_field: str
     cse_field: str
     overall: float
@@ -92,13 +94,11 @@ KNOWN_GOOD_MAPPINGS = {
     # Note: Values need transformation (4624 → "Security-4624"), but mapping is correct
     ("EventID", "metadata_deviceEventId"): 0.95,
     ("EventId", "metadata_deviceEventId"): 0.95,
-
     # Exact name matches (case-insensitive semantic match but algorithmic scoring can be low)
     ("Action", "action"): 1.0,
     ("action", "action"): 1.0,
     ("errorCode", "errorCode"): 1.0,
     ("ErrorCode", "errorCode"): 1.0,
-
     # AWS CloudTrail standard mappings (well-documented in CSE parsers)
     # eventName is used for both action and deviceEventId construction
     ("eventName", "action"): 0.95,  # Primary mapping
@@ -109,7 +109,6 @@ KNOWN_GOOD_MAPPINGS = {
     ("userAgent", "http_userAgent"): 0.95,
     ("requestParameters", "fields.requestParameters"): 0.85,
     ("responseElements", "fields.responseElements"): 0.85,
-
     # Common CSE field exact matches
     ("user", "user_username"): 0.85,
     ("User", "user_username"): 0.85,
@@ -168,9 +167,7 @@ def get_category_threshold(logsource_category: str) -> float:
 
 
 def compute_semantic_similarity(
-    sigma_field: str,
-    cse_field: str,
-    cse_field_schema: Optional[FieldSchema]
+    sigma_field: str, cse_field: str, cse_field_schema: Optional[FieldSchema]
 ) -> float:
     """
     Compute semantic similarity between Sigma and CSE field names/descriptions.
@@ -224,28 +221,26 @@ def _tokenize_field_name(field_name: str) -> Set[str]:
     Returns lowercase tokens.
     """
     # Replace underscore with space
-    field_name = field_name.replace('_', ' ')
+    field_name = field_name.replace("_", " ")
 
     # Split camelCase: CommandLine → Command Line
-    field_name = re.sub(r'([a-z])([A-Z])', r'\1 \2', field_name)
+    field_name = re.sub(r"([a-z])([A-Z])", r"\1 \2", field_name)
 
     # Split numbers: sha256 → sha 256
-    field_name = re.sub(r'([a-zA-Z])(\d+)', r'\1 \2', field_name)
+    field_name = re.sub(r"([a-zA-Z])(\d+)", r"\1 \2", field_name)
 
     # Tokenize and lowercase
     tokens = set(field_name.lower().split())
 
     # Remove common stop words that don't help matching
-    stop_words = {'the', 'a', 'an', 'of', 'to', 'for', 'in', 'on', 'at', 'from', 'by'}
+    stop_words = {"the", "a", "an", "of", "to", "for", "in", "on", "at", "from", "by"}
     tokens = tokens - stop_words
 
     return tokens
 
 
 def compute_data_preservation(
-    sigma_field: str,
-    cse_field: str,
-    logsource_category: str
+    sigma_field: str, cse_field: str, logsource_category: str
 ) -> float:
     """
     Compute data preservation score (1.0 = lossless, <1.0 = lossy).
@@ -289,8 +284,14 @@ def compute_data_preservation(
     lossy_patterns = {
         ("IntegrityLevel", "normalizedSeverity"): 0.3,  # Integrity ≠ severity
         ("CurrentDirectory", "file_path"): 0.8,  # Directory vs full path (minor)
-        ("Description", "description"): 0.9,  # File description vs event description (collision risk)
-        ("ServiceType", "resource_type"): 0.6,  # Windows service type ≠ generic resource type
+        (
+            "Description",
+            "description",
+        ): 0.9,  # File description vs event description (collision risk)
+        (
+            "ServiceType",
+            "resource_type",
+        ): 0.6,  # Windows service type ≠ generic resource type
         ("StartType", "changeType"): 0.5,  # Service startup ≠ change type
         ("Status", "normalizedAction"): 0.6,  # Status code ≠ action category
     }
@@ -317,9 +318,7 @@ def _extract_context_prefix(field_name: str) -> Optional[str]:
 
 
 def compute_type_compatibility(
-    sigma_field: str,
-    cse_field: str,
-    cse_field_schema: Optional[FieldSchema]
+    sigma_field: str, cse_field: str, cse_field_schema: Optional[FieldSchema]
 ) -> float:
     """
     Compute type compatibility score.
@@ -374,13 +373,17 @@ def _infer_sigma_type(field_name: str) -> str:
     Returns: "string", "numeric", "boolean", or "unknown"
     """
     # Numeric indicators
-    if any(keyword in field_name.lower() for keyword in
-           ["count", "size", "port", "id", "pid", "code", "status", "type"]):
+    if any(
+        keyword in field_name.lower()
+        for keyword in ["count", "size", "port", "id", "pid", "code", "status", "type"]
+    ):
         return "numeric"
 
     # Boolean indicators
-    if any(keyword in field_name.lower() for keyword in
-           ["initiated", "signed", "enabled", "success"]):
+    if any(
+        keyword in field_name.lower()
+        for keyword in ["initiated", "signed", "enabled", "success"]
+    ):
         return "boolean"
 
     # Default to string (most common)
@@ -394,13 +397,17 @@ def _infer_cse_type(field_name: str) -> str:
     Returns: "string", "int", "long", "boolean", or "unknown"
     """
     # Numeric indicators
-    if any(keyword in field_name.lower() for keyword in
-           ["port", "pid", "count", "size", "bytes", "packets"]):
+    if any(
+        keyword in field_name.lower()
+        for keyword in ["port", "pid", "count", "size", "bytes", "packets"]
+    ):
         return "int"
 
     # String indicators
-    if any(keyword in field_name.lower() for keyword in
-           ["text", "description", "message", "name", "path", "domain"]):
+    if any(
+        keyword in field_name.lower()
+        for keyword in ["text", "description", "message", "name", "path", "domain"]
+    ):
         return "string"
 
     # Boolean indicators (less common in CSE)
@@ -412,8 +419,7 @@ def _infer_cse_type(field_name: str) -> str:
 
 
 def compute_field_specificity(
-    cse_field: str,
-    cse_field_schema: Optional[FieldSchema]
+    cse_field: str, cse_field_schema: Optional[FieldSchema]
 ) -> float:
     """
     Compute field specificity score.
@@ -436,8 +442,15 @@ def compute_field_specificity(
     else:
         # Heuristic: General-purpose field names
         general_purpose_names = [
-            "action", "description", "resource", "application", "resourcetype",
-            "normalizedaction", "normalizedresource", "cause", "severity"
+            "action",
+            "description",
+            "resource",
+            "application",
+            "resourcetype",
+            "normalizedaction",
+            "normalizedresource",
+            "cause",
+            "severity",
         ]
         if cse_field.lower() in general_purpose_names:
             return 0.5
@@ -446,9 +459,7 @@ def compute_field_specificity(
 
 
 def validate_schema_appropriateness(
-    sigma_field: str,
-    cse_field: str,
-    cse_field_schema: Optional[FieldSchema]
+    sigma_field: str, cse_field: str, cse_field_schema: Optional[FieldSchema]
 ) -> tuple[bool, list[str]]:
     """
     Validate if mapping is appropriate according to CSE schema metadata.
@@ -496,7 +507,7 @@ def compute_confidence(
     sigma_field: str,
     cse_field: str,
     logsource_category: str,
-    schema: Optional[SchemaIndex]
+    schema: Optional[SchemaIndex],
 ) -> ConfidenceScore:
     """
     Compute overall confidence score for a Sigma → CSE field mapping.
@@ -573,10 +584,10 @@ def compute_confidence(
 
     # Compute weighted overall score
     overall = (
-        WEIGHT_SEMANTIC * semantic +
-        WEIGHT_DATA_PRESERVATION * data_pres +
-        WEIGHT_TYPE_COMPATIBILITY * type_compat +
-        WEIGHT_FIELD_SPECIFICITY * specificity
+        WEIGHT_SEMANTIC * semantic
+        + WEIGHT_DATA_PRESERVATION * data_pres
+        + WEIGHT_TYPE_COMPATIBILITY * type_compat
+        + WEIGHT_FIELD_SPECIFICITY * specificity
     )
 
     factors = ConfidenceFactors(
