@@ -73,7 +73,7 @@ class SchemaIndex:
         self.fields = fields
 
         # Build reverse indexes for fast lookup
-        self._entity_type_index = {}
+        self._entity_type_index: Dict[str, list] = {}
         self._enrichment_fields = set()
         self._general_purpose_fields = set()
 
@@ -115,7 +115,8 @@ class SchemaIndex:
 
     def get_fields_by_entity_type(self, entity_type: str) -> List[str]:
         """Get all fields associated with an entity type (ip, hostname, etc.)."""
-        return self._entity_type_index.get(entity_type, [])
+        result = self._entity_type_index.get(entity_type, [])
+        return list(result)
 
 
 class SchemaLoader:
