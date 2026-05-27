@@ -208,35 +208,11 @@ class DataFieldTransformation(DetectionItemFailureTransformation):
             detection_item.field = f"EventData.{field_name}"
 
             # Update the value to just the value part (removing the field name prefix)
-            # Need to preserve SigmaString structure with wildcards if present
-            if hasattr(original_value, 's'):
-                # It's a SigmaString - reconstruct with just the value part
-                # The original structure is like: [SpecialChars.WILDCARD_MULTI, 'EngineVersion=2.', SpecialChars.WILDCARD_MULTI]
-                # We want: [SpecialChars.WILDCARD_MULTI, '2.', SpecialChars.WILDCARD_MULTI]
-
-                # Find the wildcards/special chars from original
-                from sigma.types import SpecialChars
-                original_parts = original_value.s
-
-                # Reconstruct with value part only, keeping wildcards
-                new_parts = []
-                for part in original_parts:
-                    if isinstance(part, SpecialChars):
-                        # Keep special chars (wildcards)
-                        new_parts.append(part)
-                    elif isinstance(part, str):
-                        # Replace the string part with just the value
-                        new_parts.append(field_value)
-
-                # Create new SigmaString directly from internal structure
-                new_sigma_string = SigmaString.__new__(SigmaString)
-                new_sigma_string.s = new_parts
-                new_sigma_string.original = field_value
-
-                detection_item.value = [new_sigma_string]
-            else:
-                # Plain string - wrap in SigmaString
-                detection_item.value = [SigmaString(field_value)]
+            # Preserve wildcard structure from the original SigmaString
+            plain = original_value.to_plain() if hasattr(original_value, 'to_plain') else str(original_value)
+            prefix = '*' if plain.startswith('*') else ''
+            suffix = '*' if plain.endswith('*') else ''
+            detection_item.value = [SigmaString(f"{prefix}{field_value}{suffix}")]
 
         elif len(structured_patterns) > 1:
             # Multiple structured fields - this is complex, need to create multiple detection items

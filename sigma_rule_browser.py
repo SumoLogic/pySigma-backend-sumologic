@@ -64,16 +64,14 @@ def extract_confidence_metadata(pipeline: ProcessingPipeline) -> Dict[str, Any]:
     }
 
     try:
-        # Look for ConfidenceAwareFieldMapping in pipeline items
         for item in pipeline.items:
-            for transformation in item.transformations:
-                if hasattr(transformation, 'get_confidence_metadata'):
-                    metadata = transformation.get_confidence_metadata()
-                    confidence_data["field_mappings"].extend(metadata.get("field_mappings", []))
-                    if not confidence_data["logsource_category"]:
-                        confidence_data["logsource_category"] = metadata.get("logsource_category")
-    except Exception as e:
-        # If we can't extract confidence, return empty
+            transformation = getattr(item, 'transformation', None)
+            if transformation and hasattr(transformation, 'get_confidence_metadata'):
+                metadata = transformation.get_confidence_metadata()
+                confidence_data["field_mappings"].extend(metadata.get("field_mappings", []))
+                if not confidence_data["logsource_category"]:
+                    confidence_data["logsource_category"] = metadata.get("logsource_category")
+    except Exception:
         pass
 
     return confidence_data
@@ -166,9 +164,6 @@ def convert_rules(rule_paths: List[Path], enable_confidence: bool = True) -> Lis
             collection = SigmaCollection.from_yaml(rule_yaml)
             converted = backend.convert(collection)
 
-            # Extract confidence metadata from pipeline
-            confidence_metadata = extract_confidence_metadata(pipeline)
-
             # Parse the JSON result - now wrapped in {"rules": [...]}
             if converted:
                 for json_str in converted:
@@ -179,17 +174,16 @@ def convert_rules(rule_paths: List[Path], enable_confidence: bool = True) -> Lis
                             results.append({
                                 "source_file": str(rule_path.relative_to(SIGMA_REPO_PATH)),
                                 "rule": rule_json,
-                                "source_yaml": rule_yaml,  # Store original YAML
-                                "confidence_metadata": confidence_metadata,  # Store confidence data
+                                "source_yaml": rule_yaml,
+                                "confidence_metadata": rule_json.get("mapping_confidence", {}),
                                 "success": True
                             })
                     else:
-                        # Fallback for old format (shouldn't happen with latest backend)
                         results.append({
                             "source_file": str(rule_path.relative_to(SIGMA_REPO_PATH)),
                             "rule": parsed,
-                            "source_yaml": rule_yaml,  # Store original YAML
-                            "confidence_metadata": confidence_metadata,  # Store confidence data
+                            "source_yaml": rule_yaml,
+                            "confidence_metadata": parsed.get("mapping_confidence", {}),
                             "success": True
                         })
         except Exception as e:

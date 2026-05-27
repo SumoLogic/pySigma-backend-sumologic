@@ -45,11 +45,31 @@ detection:
 **Output (CSIEM rule format):**
 ```json
 {
-  "name": "Suspicious PowerShell Execution",
-  "expression": "commandLine matches \"*powershell*\"",
-  "enabled": true,
-  "severity": "medium",
-  "tags": ["windows", "process_creation"]
+  "rules": [
+    {
+      "content_type": "RULE",
+      "sigma_uid": "1cf98dc2-fcb0-47c9-8aea-654c9284d1ae",
+      "enabled": true,
+      "is_prototype": true,
+      "name": "Disk Image Creation Via Hdiutil - MacOS",
+      "name_expression": "Disk Image Creation Via Hdiutil - MacOS",
+      "rule_source": "user",
+      "summary_expression": "",
+      "pattern_type": "templated_match",
+      "stream": "record",
+      "description_expression": "Detects the execution of hdiutil to create a disk image...",
+      "expression": "baseImage matches /.*\\/hdiutil/ AND commandLine matches /.*create.*/",
+      "entity_selectors": [
+        {"entity_type": "_hostname", "expression": "device_hostname"},
+        {"entity_type": "_username", "expression": "user_username"},
+        {"entity_type": "_process", "expression": "baseImage"}
+      ],
+      "score_mapping": {"default": 3, "type": "constant", "field": null, "mapping": []},
+      "tags": ["_mitreAttackTactic:TA0010"],
+      "category": "Exfiltration",
+      "mapping_confidence": {"overall_score": 0.7, "...": "..."}
+    }
+  ]
 }
 ```
 
