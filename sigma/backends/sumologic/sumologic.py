@@ -1,3 +1,5 @@
+# The
+
 from sigma.conversion.state import ConversionState
 from sigma.conversion.base import TextQueryBackend
 from sigma.conditions import ConditionItem, ConditionAND, ConditionOR, ConditionNOT
@@ -25,14 +27,14 @@ class SumoLogicCSEBackend(TextQueryBackend):
     """
 
     name: ClassVar[str] = "Sumo Logic Cloud SIEM Backend"
-    formats: Dict[str, str] = {
+    formats: Dict[str, str] = {  # type: ignore[misc]
         "default": "Sumo Logic CSIEM Rule JSON format",
         "cse_rule": "CSIEM Rule JSON with full metadata",
     }
-    requires_pipeline: bool = True
+    requires_pipeline: bool = True  # type: ignore[misc]
 
     # Cloud SIEM uses uppercase boolean operators
-    precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (
+    precedence: ClassVar[Tuple[ConditionItem, ConditionItem, ConditionItem]] = (  # type: ignore[assignment]
         ConditionNOT,
         ConditionAND,
         ConditionOR,
@@ -63,7 +65,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
     wildcard_single: ClassVar[str] = "*"
     add_escaped: ClassVar[str] = ""  # Don't add extra escaping
     filter_chars: ClassVar[str] = ""
-    bool_values: ClassVar[Dict[bool, str]] = {
+    bool_values: ClassVar[Dict[bool, str]] = {  # type: ignore[assignment]
         True: "true",
         False: "false",
     }
@@ -78,7 +80,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
     # Must escape / (delimiter), and common regex metacharacters when used as literals
     re_expression: ClassVar[str] = "{field} matches /{regex}/"
     re_escape_char: ClassVar[str] = "\\"
-    re_escape: ClassVar[Tuple[str, ...]] = ("/", ".")
+    re_escape: ClassVar[Tuple[str, ...]] = ("/", ".")  # type: ignore[assignment]
     re_escape_escape_char: bool = True
     re_flag_prefix: bool = False  # CSE doesn't use flag prefixes in regex
     re_flags: Dict[SigmaRegularExpressionFlag, str] = {
@@ -87,7 +89,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     # Numeric comparison operators
     compare_op_expression: ClassVar[str] = "{field} {operator} {value}"
-    compare_operators: ClassVar[Dict[SigmaCompareExpression.CompareOperators, str]] = {
+    compare_operators: ClassVar[Dict[SigmaCompareExpression.CompareOperators, str]] = {  # type: ignore[valid-type]
         SigmaCompareExpression.CompareOperators.LT: "<",
         SigmaCompareExpression.CompareOperators.LTE: "<=",
         SigmaCompareExpression.CompareOperators.GT: ">",
@@ -139,7 +141,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
-        self.rule_metadata = []
+        self.rule_metadata: List[Dict[str, Any]] = []
         self.min_confidence = float(min_confidence)
         self.schema_path = schema_path
         self.include_confidence_metadata = include_confidence_metadata
@@ -228,7 +230,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         if not isinstance(cond, ConditionFieldEqualsValueExpression):
             # Fallback to parent implementation
-            return super().convert_condition_field_eq_val_num(cond, state)
+            return super().convert_condition_field_eq_val_num(cond, state)  # type: ignore[return-value]
 
         field_name = cond.field
         numeric_value = cond.value.to_plain()
@@ -259,7 +261,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if not all(
             isinstance(arg, ConditionFieldEqualsValueExpression) for arg in cond.args
         ):
-            return super().convert_condition_as_in_expression(cond, state)
+            return super().convert_condition_as_in_expression(cond, state)  # type: ignore[return-value]
 
         field_name = cast(ConditionFieldEqualsValueExpression, cond.args[0]).field
 
@@ -513,7 +515,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             return query
 
         # Clear any previous unmapped logsource tracking (we have a valid mapping)
-        self._unmapped_logsource = None
+        self._unmapped_logsource = None  # type: ignore[assignment]
 
         # Skip "Generic" vendor/product metadata - these are fallback categories
         # not actual vendor/product filters in Cloud SIEM
@@ -860,10 +862,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Add entity selectors if available
         if entity_selectors:
-            rule_json["entity_selectors"] = entity_selectors
-
+            rule_json["entity_selectors"] = entity_selectors  # type: ignore[assignment]
         # Add score mapping
-        rule_json["score_mapping"] = {
+        rule_json["score_mapping"] = {  # type: ignore[assignment]
             "default": risk_score,
             "type": "constant",
             "field": None,
@@ -872,8 +873,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
         # Add tags array with normalized MITRE tags
         if mitre_tags:
-            rule_json["tags"] = mitre_tags
-
+            rule_json["tags"] = mitre_tags  # type: ignore[assignment]
         # Add category (derived from MITRE tactic tags)
         rule_json["category"] = category
 
@@ -906,8 +906,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 )
 
             # Add confidence metadata to rule JSON
-            rule_json["mapping_confidence"] = confidence_metadata
-
+            rule_json["mapping_confidence"] = confidence_metadata  # type: ignore[assignment]
         return rule_json
 
     def _get_used_fields(self, rule: SigmaRule) -> set:
@@ -1149,8 +1148,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 f"Rule will not have metadata_vendor/metadata_product filters and may not match expected logs."
             )
             # Reset for next rule
-            self._unmapped_logsource = None
-
+            self._unmapped_logsource = None  # type: ignore[assignment]
         # Get threshold for this category
         category_threshold = get_category_threshold(logsource_category)
 
@@ -1437,7 +1435,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             get_entities_for_category,
         )
 
-        entity_selectors = []
+        entity_selectors: List[Dict[str, str]] = []
 
         if not logsource:
             return entity_selectors

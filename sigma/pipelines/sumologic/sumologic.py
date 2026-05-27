@@ -311,7 +311,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
         if condition_kwargs:
             item_kwargs["rule_conditions"] = [LogsourceCondition(**condition_kwargs)]
 
-        items.append(ProcessingItem(**item_kwargs))
+        items.append(ProcessingItem(**item_kwargs))  # type: ignore[arg-type]
 
     items.append(
         ProcessingItem(
