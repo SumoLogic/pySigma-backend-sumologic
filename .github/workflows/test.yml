@@ -31,12 +31,17 @@ jobs:
         if: ${{ runner.os == 'Linux' }}
         run: poetry run python print-coverage.py >> $GITHUB_ENV
       - name: Create coverage badge
-        if: ${{ github.repository == 'https://github.com/SumoLogic/sumologic' && github.event_name == 'push' && runner.os == 'Linux' }}
+        # Only run if GIST_SECRET is configured. To set up:
+        # 1. Create a GitHub Gist with a JSON file
+        # 2. Create a Personal Access Token with 'gist' scope
+        # 3. Add as repository secret named GIST_SECRET
+        # 4. Replace gistID below with the actual Gist ID
+        if: ${{ github.repository == 'SumoLogic/pySigma-backend-sumologic' && github.event_name == 'push' && runner.os == 'Linux' && secrets.GIST_SECRET != '' }}
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
           gistID: GitHub Gist identifier containing coverage badge JSON expected by shields.io.
-          filename: https://github.com/SumoLogic-sumologic.json
+          filename: pysigma-backend-sumologic-coverage.json
           label: Coverage
           message: ${{ env.COVERAGE }}
           color: ${{ env.COVERAGE_COLOR }}
