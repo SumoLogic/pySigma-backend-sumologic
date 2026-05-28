@@ -61,19 +61,24 @@ fi
 echo "✅ Sigma repository found at: $SIGMA_PATH"
 echo ""
 
-# Update docker-compose.yml with the path
-echo "📝 Updating docker-compose.yml with Sigma repository path..."
-
-# Create a temporary file with the updated path
-if [[ "$OSTYPE" == "darwin"* ]]; then
-    # macOS
-    sed -i '' "s|/path/to/sigma|$SIGMA_PATH|g" docker-compose.yml
+# Set the Sigma path via .env file (docker-compose reads this automatically)
+echo "📝 Writing SIGMA_RULES_HOST_PATH to .env..."
+if [ -f .env ]; then
+    # Update existing .env, replacing any existing SIGMA_RULES_HOST_PATH line
+    if grep -q "^SIGMA_RULES_HOST_PATH=" .env; then
+        if [[ "$OSTYPE" == "darwin"* ]]; then
+            sed -i '' "s|^SIGMA_RULES_HOST_PATH=.*|SIGMA_RULES_HOST_PATH=$SIGMA_PATH|" .env
+        else
+            sed -i "s|^SIGMA_RULES_HOST_PATH=.*|SIGMA_RULES_HOST_PATH=$SIGMA_PATH|" .env
+        fi
+    else
+        echo "SIGMA_RULES_HOST_PATH=$SIGMA_PATH" >> .env
+    fi
 else
-    # Linux
-    sed -i "s|/path/to/sigma|$SIGMA_PATH|g" docker-compose.yml
+    echo "SIGMA_RULES_HOST_PATH=$SIGMA_PATH" > .env
 fi
 
-echo "✅ docker-compose.yml updated"
+echo "✅ .env updated with SIGMA_RULES_HOST_PATH=$SIGMA_PATH"
 echo ""
 
 # Build and start the container
