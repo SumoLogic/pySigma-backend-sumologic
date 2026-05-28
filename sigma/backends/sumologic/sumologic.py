@@ -27,6 +27,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
     """
 
     name: ClassVar[str] = "Sumo Logic Cloud SIEM Backend"
+    identifier: ClassVar[str] = "sumo_logic_cse"
     formats: Dict[str, str] = {  # type: ignore[misc]
         "default": "Sumo Logic CSIEM Rule JSON format",
         "cse_rule": "CSIEM Rule JSON with full metadata",
@@ -1551,6 +1552,7 @@ class SumoLogicCSERuleBackend(SumoLogicCSEBackend):
     """
 
     name: ClassVar[str] = "Sumo Logic Cloud SIEM Rule JSON Backend"
+    identifier: ClassVar[str] = "sumo_logic_cse_rule"
 
     def finalize_query_cse_rule(
         self, rule: SigmaRule, query: str, index: int, state: ConversionState

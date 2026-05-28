@@ -1,7 +1,7 @@
 # pySigma Sumo Logic Backend
 
-![Status](https://img.shields.io/badge/Status-testing-yellow)
-![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/SumoLogic/GIST_ID/raw/pysigma-backend-sumologic-coverage.json)
+![Status](https://img.shields.io/badge/Status-beta-blue)
+![Coverage](https://img.shields.io/badge/Coverage-pending-lightgrey)
 
 ## Overview
 
