@@ -1,4 +1,3 @@
-# The
 
 from sigma.conversion.state import ConversionState
 from sigma.conversion.base import TextQueryBackend
