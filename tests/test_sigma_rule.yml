@@ -1,0 +1,14 @@
+title: Test Rule for Integration
+id: 00000000-0000-0000-0000-000000000001
+status: test
+description: Simple test rule for integration testing
+author: Test Author
+date: 2024/01/01
+level: medium
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    sel:
+        CommandLine|contains: 'test.exe'
+    condition: sel

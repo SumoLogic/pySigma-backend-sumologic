@@ -1,0 +1,12 @@
+[theme]
+# Sumo Logic Cloud SIEM inspired theme
+primaryColor = "#2063d6"           # Sumo Logic primary blue
+backgroundColor = "#101827"        # CSE background dark
+secondaryBackgroundColor = "#151e30"  # CSE paper/card background
+textColor = "#f5f8fa"             # CSE primary text
+font = "sans serif"
+
+[server]
+headless = true
+enableCORS = false
+enableXsrfProtection = true

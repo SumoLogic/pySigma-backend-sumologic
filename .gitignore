@@ -1,0 +1,11 @@
+.coverage*
+.vscode/
+.idea/
+**/__pycache__
+.pytest_cache/
+cov.xml
+dist/
+docs/_build
+.env
+.DS_Store
+uv.lock
