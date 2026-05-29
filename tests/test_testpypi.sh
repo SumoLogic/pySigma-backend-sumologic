@@ -146,7 +146,7 @@ echo "   Created test rule: test_rule.yml"
 echo ""
 
 echo "   Converting with backend..."
-sigma convert -t sumo_logic_cse_rule -p sumologic_cse test_rule.yml > output.json
+sigma convert -t sumologic_cse_rule -p sumologic_cse test_rule.yml > output.json
 
 if [ $? -ne 0 ]; then
     echo "❌ FAIL: Conversion failed"
@@ -166,18 +166,24 @@ with open('output.json') as f:
     data = json.load(f)
     print(data)
     
-# Check required fields in CSE rule
+# Backend wraps output as {\"rules\": [...]} — index into the first rule
+if 'rules' in data and len(data['rules']) > 0:
+    rule = data['rules'][0]
+else:
+    print('❌ FAIL: Output missing rules array')
+    sys.exit(1)
+
 required_fields = ['name', 'expression', 'enabled']
-missing_fields = [field for field in required_fields if field not in data]
+missing_fields = [field for field in required_fields if field not in rule]
 
 if missing_fields:
     print(f'❌ FAIL: Missing required fields: {missing_fields}')
     sys.exit(1)
 
 print('✅ Output validation passed')
-print(f'   Rule name: {data[\"name\"]}')
-print(f'   Expression: {data[\"expression\"][:60]}...')
-print(f'   Enabled: {data[\"enabled\"]}')
+print(f'   Rule name: {rule[\"name\"]}')
+print(f'   Expression: {rule[\"expression\"][:60]}...')
+print(f'   Enabled: {rule[\"enabled\"]}')
 "
 
 if [ $? -ne 0 ]; then

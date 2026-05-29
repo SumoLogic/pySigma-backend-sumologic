@@ -128,7 +128,7 @@ def test_azure_signinlogs_metadata(backend):
 
 
 def test_linux_auditd_metadata(backend):
-    """Test Linux auditd gets correct vendor/product."""
+    """Test Linux auditd with no vendor mapping produces query without metadata filters."""
     result = backend.convert(
         SigmaCollection.from_yaml(
             """
@@ -150,8 +150,9 @@ def test_linux_auditd_metadata(backend):
     parsed = json.loads(result[0])
     expr = parsed["rules"][0]["expression"]
 
-    assert 'metadata_vendor="Linux"' in expr
-    assert 'metadata_product="Auditd"' in expr
+    # No vendor/product mapping exists for linux/auditd — query has no metadata filters
+    assert "metadata_vendor" not in expr
+    assert "fields[" in expr
 
 
 def test_windows_powershell_metadata(backend):
@@ -212,7 +213,7 @@ def test_windows_taskscheduler_metadata(backend):
 
 
 def test_generic_category_fallback(backend):
-    """Test generic category gets fallback vendor/product."""
+    """Test generic category fallback is intentionally skipped (not injected into query)."""
     result = backend.convert(
         SigmaCollection.from_yaml(
             """
@@ -232,9 +233,10 @@ def test_generic_category_fallback(backend):
     parsed = json.loads(result[0])
     expr = parsed["rules"][0]["expression"]
 
-    # Generic fallback should be used
-    assert 'metadata_vendor="Generic"' in expr
-    assert 'metadata_product="Proxy"' in expr
+    # Backend deliberately skips "Generic" vendor/product metadata —
+    # these are fallback categories, not actual vendor filters in Cloud SIEM
+    assert "metadata_vendor" not in expr
+    assert "malicious" in expr
 
 
 def test_eventid_list_transformation(backend):

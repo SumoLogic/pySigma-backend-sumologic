@@ -155,17 +155,17 @@ def convert_rules(
 
     Args:
         rule_paths: List of paths to Sigma rule files
-        enable_confidence: If True, use confidence-aware pipeline (currently always enabled)
+        enable_confidence: If True, apply confidence threshold gate; if False, convert all rules regardless of confidence score
 
     Returns:
         List of conversion results with metadata
     """
-    # For now, always use the standard pipeline
-    # The confidence toggle is informational - showing confidence metadata
-    # Future: Could implement pipeline variants with different confidence thresholds
     pipeline = sumologic_cse_pipeline()
 
-    backend = SumoLogicCSERuleBackend(processing_pipeline=pipeline)
+    min_confidence = 0.7 if enable_confidence else 0.0
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=pipeline, min_confidence=min_confidence
+    )
     results = []
 
     for rule_path in rule_paths:

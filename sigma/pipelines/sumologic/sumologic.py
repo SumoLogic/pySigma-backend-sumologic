@@ -323,7 +323,7 @@ def sumologic_cse_pipeline() -> ProcessingPipeline:
 
     return ProcessingPipeline(
         name="Sumo Logic Cloud SIEM (CSE) Pipeline",
-        allowed_backends=frozenset(["sumo_logic_cse", "sumo_logic_cse_rule"]),
+        allowed_backends=frozenset(["sumologic_cse", "sumologic_cse_rule"]),
         priority=20,
         items=items,
     )

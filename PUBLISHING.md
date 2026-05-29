@@ -141,7 +141,7 @@ detection:
   condition: selection
 EOF
 
-sigma convert -t sumologic-cse-rule -p sumologic_cse test_rule.yml
+sigma convert -t sumologic_cse_rule -p sumologic_cse test_rule.yml
 
 # If conversion works, you're good! Clean up:
 deactivate
@@ -434,7 +434,7 @@ pip install pysigma-backend-sumologic
 
 ```bash
 # Convert Sigma rules to Sumo Logic CSE rules
-sigma convert -t sumologic-cse-rule -p sumologic_cse your_rule.yml
+sigma convert -t sumologic_cse_rule -p sumologic_cse your_rule.yml
 ```
 ```
 

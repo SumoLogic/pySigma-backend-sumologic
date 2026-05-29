@@ -10,8 +10,8 @@ def test_sumologic_cse_pipeline_initialization():
 
     assert pipeline is not None
     assert pipeline.name == "Sumo Logic Cloud SIEM (CSE) Pipeline"
-    assert "sumo_logic_cse" in pipeline.allowed_backends
-    assert "sumo_logic_cse_rule" in pipeline.allowed_backends
+    assert "sumologic_cse" in pipeline.allowed_backends
+    assert "sumologic_cse_rule" in pipeline.allowed_backends
     assert pipeline.priority == 20
 
 
@@ -167,7 +167,8 @@ def test_sumologic_cse_pipeline_registry_event_mapping():
 
     # Verify field mapping occurred
     assert "changeTarget" in result[0]
-    assert "changeResult" in result[0]
+    # Details is not mapped in the registry_event category — it becomes a vendor pass-through field
+    assert "fields['EventData.Details']" in result[0]
 
 
 def test_sumologic_cse_pipeline_proxy_mapping():

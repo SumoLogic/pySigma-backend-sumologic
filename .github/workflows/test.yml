@@ -48,8 +48,8 @@ jobs:
           message: ${{ env.COVERAGE }}
           color: ${{ env.COVERAGE_COLOR }}
       - name: Run integration test
-        # Integration test validates package building, installation, and imports
-        # Only run on Linux to avoid redundant testing across all platforms
-        # if: ${{ runner.os == 'Linux' && matrix.python-version == '3.13' }}
+        # Disabled until first PyPI release and plugin directory registration.
+        # Re-enable with: if: ${{ runner.os == 'Linux' && matrix.python-version == '3.13' }}
+        # See PUBLISHING.md "After Plugin Directory Registration" for details.
         if: false
         run: sh tests/test_integration.sh

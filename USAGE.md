@@ -27,31 +27,31 @@ poetry install
 
 Convert a single Sigma rule to CSE query format:
 ```bash
-sigma convert -t sumo_logic_cse -p sumologic_cse rule.yml
+sigma convert -t sumologic_cse -p sumologic_cse rule.yml
 ```
 
 Convert to CSE Rule JSON format (with metadata):
 ```bash
-sigma convert -t sumo_logic_cse_rule -p sumologic_cse rule.yml
+sigma convert -t sumologic_cse_rule -p sumologic_cse rule.yml
 ```
 
 ### Batch Conversion
 
 Convert all rules in a directory:
 ```bash
-sigma convert -t sumo_logic_cse_rule -p sumologic_cse rules/*.yml -o output.json
+sigma convert -t sumologic_cse_rule -p sumologic_cse rules/*.yml -o output.json
 ```
 
 ### Backend Options
 
 Set minimum confidence threshold:
 ```bash
-sigma convert -t sumo_logic_cse -p sumologic_cse -O min_confidence=0.6 rule.yml
+sigma convert -t sumologic_cse -p sumologic_cse -O min_confidence=0.6 rule.yml
 ```
 
 Use custom CSE schema file:
 ```bash
-sigma convert -t sumo_logic_cse -p sumologic_cse -O schema_path=/path/to/schema.json rule.yml
+sigma convert -t sumologic_cse -p sumologic_cse -O schema_path=/path/to/schema.json rule.yml
 ```
 
 ## Using Programmatically
@@ -110,7 +110,7 @@ from sigma.collection import SigmaCollection
 plugins = InstalledSigmaPlugins.autodiscover()
 
 # Get backend and pipeline
-backend_class = plugins.backends['sumo_logic_cse_rule']
+backend_class = plugins.backends['sumologic_cse_rule']
 pipeline_fn = plugins.pipelines['sumologic_cse']
 
 # Create backend
@@ -268,13 +268,13 @@ Field mappings are validated with confidence scores. Low-confidence mappings are
 
 ```bash
 # Rule with eventName → action mapping (high confidence: 0.95)
-sigma convert -t sumo_logic_cse -p sumologic_cse aws_rule.yml  # ✅ Succeeds
+sigma convert -t sumologic_cse -p sumologic_cse aws_rule.yml  # ✅ Succeeds
 
 # Rule with unknown field mapping (low confidence: 0.3)
-sigma convert -t sumo_logic_cse -p sumologic_cse unknown_rule.yml  # ❌ Fails
+sigma convert -t sumologic_cse -p sumologic_cse unknown_rule.yml  # ❌ Fails
 
 # Override threshold for testing
-sigma convert -t sumo_logic_cse -p sumologic_cse -O min_confidence=0.2 unknown_rule.yml  # ✅ Succeeds
+sigma convert -t sumologic_cse -p sumologic_cse -O min_confidence=0.2 unknown_rule.yml  # ✅ Succeeds
 ```
 
 ## Troubleshooting
