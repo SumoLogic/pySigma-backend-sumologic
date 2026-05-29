@@ -1,6 +1,6 @@
 [tool.poetry]
 name = "pysigma-backend-sumologic"
-version = "0.2.1"
+version = "0.2.2"
 description = "pySigma Sumo Logic Cloud SIEM backend with confidence scoring"
 authors = ["Julian Crowley <jcrowley@sumologic.com>","Dinesh Meka <dinesh.meka@sumologic.com>"]
 readme = "README.md"
