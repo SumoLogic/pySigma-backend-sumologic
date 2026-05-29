@@ -133,7 +133,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self,
         processing_pipeline: Optional[Any] = None,
         collect_errors: bool = False,
-        min_confidence: float = 0.7,
+        min_confidence: float = 0.25,
         schema_path: Optional[str] = None,
         include_confidence_metadata: bool = True,
         fail_on_unmapped_logsource: bool = False,
