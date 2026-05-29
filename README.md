@@ -1,90 +1,112 @@
 # pySigma Sumo Logic Backend
 
-![Status](https://img.shields.io/badge/Status-beta-blue)
-![Coverage](https://img.shields.io/badge/Coverage-pending-lightgrey)
+![Status](https://img.shields.io/badge/Status-released-green)
+[![PyPI](https://img.shields.io/pypi/v/pysigma-backend-sumologic)](https://pypi.org/project/pysigma-backend-sumologic/)
+![Python](https://img.shields.io/pypi/pyversions/pysigma-backend-sumologic)
+![License](https://img.shields.io/github/license/SumoLogic/pySigma-backend-sumologic)
 
 ## Overview
 
-This is the Sumo Logic backend for pySigma. It provides the package `sigma.backends.sumologic` with backend classes for converting Sigma rules into Sumo Logic Cloud SIEM (CSIEM) detection rules.
+A [pySigma](https://github.com/SigmaHQ/pySigma) backend that converts [Sigma](https://github.com/SigmaHQ/sigma) detection rules into Sumo Logic Cloud SIEM rule JSON, ready for import via the CSE API. Includes field mappings for 70+ log sources, automatic entity selector assignment, MITRE ATT&CK tag mapping, and confidence scoring.
 
-The backend includes:
-- **`SumoLogicCSEBackend`**: Converts Sigma rules to Sumo Logic Cloud SIEM queries
-- **`SumoLogicCSERuleBackend`**: Converts Sigma rules to complete CSIEM rule JSON format
-- **`sumologic_cse_pipeline`**: Processing pipeline with field mappings for common log sources
+## Quick Start
+
+```bash
+pip install sigma-cli pysigma-backend-sumologic
+sigma convert -t sumologic_cse_rule -p sumologic_cse rule.yml
+```
 
 ## Supported Log Sources
 
-The backend includes field mappings for the following log sources:
+### Full Field Mapping
 
-- **Windows**: Process creation (Sysmon), registry events, file events
-- **Network**: Connection events, DNS queries, proxy logs
-- **Cloud**: AWS CloudTrail events
+These log sources have Sigma fields automatically renamed to CSE normalized schema fields:
 
-Field mappings align with Sumo Logic Cloud SIEM's normalized schema.
+| Log Source | Key Field Mappings |
+|------------|-------------------|
+| Process creation | CommandLine→commandLine, Image→baseImage, ParentImage→parentBaseImage, User→user_username |
+| Network connection | SourceIp→srcDevice_ip, DestinationIp→dstDevice_ip, SourcePort→srcPort, DestinationPort→dstPort |
+| DNS query | QueryName→dns_query, QueryResults→dns_reply |
+| File events | TargetFilename→file_path, md5→file_hash_md5, SHA256→file_hash_sha256 |
+| Registry events | TargetObject→changeTarget |
+| Image load | ImageLoaded→baseImage |
+| Proxy / web | c-uri→http_url, cs-method→http_method, sc-status→http_response_statusCode, cs-bytes→bytesOut, sc-bytes→bytesIn |
+| Firewall | src_ip→srcDevice_ip, dst_ip→dstDevice_ip, action→action |
+| Windows authentication | LogonType→logonType, TargetUserName→user_username, IpAddress→srcDevice_ip |
+| Windows Sysmon | Inherits process/network/file/registry mappings + EventID→metadata_deviceEventId |
+| Windows PowerShell | ScriptBlockText→commandLine |
+| AWS CloudTrail | eventName→action, sourceIPAddress→srcDevice_ip, userIdentity.arn→user_username |
+| Azure Activity Logs | operationName→action, callerIpAddress→srcDevice_ip |
+| Office 365 | Operation→action, ClientIP→srcDevice_ip |
 
-## Output Formats
+### Metadata-Only (Vendor/Product Tagging)
 
-The backend supports two output formats:
+These log sources get `metadata_vendor` and `metadata_product` injected into the query. Fields pass through as `fields['FieldName']` in CSE syntax:
 
-- **`default`**: Plain CSIEM query syntax (for manual rule creation)
-- **`cse_rule`**: Complete JSON rule format for Cloud SIEM API import (includes metadata, severity, MITRE ATT&CK mapping)
+- **Windows** (30+ services): powershell-classic, taskscheduler, WMI, DNS-server, windefend, driver-framework, etc.
+- **AWS**: S3, GuardDuty, VPC, WAF, Route53, Config, EKS, ELB, CloudWatch, SecurityHub, etc.
+- **Azure**: Sign-in Logs, Audit Logs, Firewall, Risk Detection, PIM, etc.
+- **GCP**: Audit, GCE, GCS, BigQuery, Security Center
+- **Google Workspace**: Admin, Login
+- **Cisco**: ASA, Firepower, ISE, Umbrella, Meraki, Duo, AnyConnect, etc.
+- **Palo Alto Networks**: Threat, Traffic, Cortex, GlobalProtect, Prisma Cloud, etc.
+- **Fortinet**: FortiGate, FortiClient
+- **Other**: Okta, OneLogin, GitHub, Kubernetes, Check Point, Zeek, Exchange
 
-### Example Output
+## Output Format
 
-**Input (Sigma rule):**
-```yaml
-title: Suspicious PowerShell Execution
-logsource:
-    category: process_creation
-    product: windows
-detection:
-    selection:
-        CommandLine|contains: 'powershell'
-    condition: selection
-```
+Produces complete CSE rule JSON ready for the Rules API:
 
-**Output (CSIEM rule format):**
 ```json
 {
   "rules": [
     {
-      "content_type": "RULE",
-      "sigma_uid": "1cf98dc2-fcb0-47c9-8aea-654c9284d1ae",
-      "enabled": true,
-      "is_prototype": true,
-      "name": "Disk Image Creation Via Hdiutil - MacOS",
-      "name_expression": "Disk Image Creation Via Hdiutil - MacOS",
-      "rule_source": "user",
-      "summary_expression": "",
-      "pattern_type": "templated_match",
-      "stream": "record",
-      "description_expression": "Detects the execution of hdiutil to create a disk image...",
-      "expression": "baseImage matches /.*\\/hdiutil/ AND commandLine matches /.*create.*/",
+      "name": "Suspicious PowerShell Execution",
+      "expression": "commandLine matches /.*powershell -enc.*/",
       "entity_selectors": [
         {"entity_type": "_hostname", "expression": "device_hostname"},
         {"entity_type": "_username", "expression": "user_username"},
         {"entity_type": "_process", "expression": "baseImage"}
       ],
-      "score_mapping": {"default": 3, "type": "constant", "field": null, "mapping": []},
-      "tags": ["_mitreAttackTactic:TA0010"],
-      "category": "Exfiltration",
-      "mapping_confidence": {"overall_score": 0.7, "...": "..."}
+      "score_mapping": {"default": 6, "type": "constant"},
+      "tags": ["_mitreAttackTactic:TA0002", "_mitreAttackTechnique:T1059"],
+      "category": "Execution",
+      "enabled": true,
+      "is_prototype": true,
+      "mapping_confidence": {"overall_score": 0.691, "...": "..."}
     }
   ]
 }
 ```
 
+## How It Works
+
+**Field Mapping** — The `sumologic_cse` pipeline renames Sigma standard fields to CSE normalized schema fields based on the rule's log source category.
+
+**Confidence Scoring** — Each field mapping receives a confidence score (0–1). If the lowest score falls below the threshold (default: 0.25), conversion is blocked with a message showing exactly which fields failed and what threshold to use.
+
+**Entity Selectors** — Automatically assigned based on log source category:
+- Process rules → hostname + username + process
+- Network/firewall rules → hostname + IP
+- DNS rules → hostname + domain
+- Authentication rules → hostname + IP + username
+- File rules → hostname + file path
+
+**MITRE ATT&CK** — Tags from Sigma rules are mapped to CSE format (`attack.execution` → `_mitreAttackTactic:TA0002`).
+
+**Severity** — Sigma levels map to CSE scores: critical=8, high=6, medium=3, low=1, informational=1.
+
+## Unmapped Field Handling
+
+| Scenario | Behavior | Confidence |
+|----------|----------|------------|
+| Field mapped by pipeline | Renamed to CSE schema field | 0.85–1.0 |
+| Vendor-specific rule, unmapped field | Passes through as `fields['FieldName']` | 0.8 |
+| Generic rule (no product), unmapped field | Blocked with warning | 0.0 |
+| `Data` field with `Key=Value` pattern | Auto-converted to `EventData.Key` | Normal |
+| `Data` field with arbitrary string | Blocked with helpful error | N/A |
+
 ## Installation
-
-### Quick Start (Docker - Recommended for Testing)
-
-For the easiest setup with the included Sigma Rule Browser:
-
-```bash
-./quick-start.sh
-```
-
-This will set up a complete environment with Docker. See **[SETUP.md](SETUP.md)** for detailed instructions.
 
 ### From PyPI
 
@@ -92,7 +114,7 @@ This will set up a complete environment with Docker. See **[SETUP.md](SETUP.md)*
 pip install pysigma-backend-sumologic
 ```
 
-### From Source (Development)
+### From Source
 
 ```bash
 git clone https://github.com/SumoLogic/pySigma-backend-sumologic
@@ -100,32 +122,19 @@ cd pySigma-backend-sumologic
 pip install .
 ```
 
-For complete setup instructions including Docker, Poetry, and the Sigma Rule Browser, see **[SETUP.md](SETUP.md)**.
-
 ## Usage
-
-### Sigma Rule Browser (Web Interface)
-
-A Streamlit-based browser for exploring and converting Sigma rules:
-
-```bash
-# With Docker (easiest)
-docker-compose up
-
-# Or locally
-streamlit run sigma_rule_browser.py
-```
-
-Visit `http://localhost:8501` to browse, preview, and convert rules. See **[RULE_BROWSER.md](RULE_BROWSER.md)** for details.
 
 ### With sigma-cli
 
 ```bash
-# Convert to CSE query
-sigma convert -t sumologic_cse -p sumologic_cse rule.yml
-
-# Convert to full CSE rule JSON
+# Convert to CSE rule JSON
 sigma convert -t sumologic_cse_rule -p sumologic_cse rule.yml
+
+# Convert a directory of rules
+sigma convert -t sumologic_cse_rule -p sumologic_cse ./rules/windows/
+
+# Lower confidence threshold for more permissive conversion
+sigma convert -t sumologic_cse_rule -p sumologic_cse -O min_confidence=0.0 rule.yml
 ```
 
 ### As Python Library
@@ -135,152 +144,51 @@ from sigma.collection import SigmaCollection
 from sigma.backends.sumologic import SumoLogicCSERuleBackend
 from sigma.pipelines.sumologic import sumologic_cse_pipeline
 
-# Load Sigma rule
-with open('rule.yml') as f:
-    rule = SigmaCollection.from_yaml(f.read())
+pipeline = sumologic_cse_pipeline()
+backend = SumoLogicCSERuleBackend(processing_pipeline=pipeline)
 
-# Convert to CSE rule
-backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline())
+rule = SigmaCollection.from_yaml(open('rule.yml').read())
 result = backend.convert(rule)
-
-print(result[0])  # CSE rule JSON
+print(result[0])  # CSE rule JSON string
 ```
 
-## Field Mappings
+## Configuration Options
 
-The `sumologic_cse_pipeline` provides automatic field mapping from Sigma standard fields to Sumo Logic CSE fields:
+Pass via `-O key=value` with sigma-cli or as constructor kwargs in Python:
 
-| Sigma Field | CSE Field |
-|-------------|-----------|
-| `CommandLine` | `commandLine` |
-| `Image` | `baseImage` |
-| `ParentImage` | `parentBaseImage` |
-| `User` | `user_username` |
-| `SourceIp` | `srcDevice_ip` |
-| `DestinationIp` | `dstDevice_ip` |
-| `SourcePort` | `srcPort` |
-| `DestinationPort` | `dstPort` |
-| `QueryName` | `dns_query` |
-
-For a complete list of field mappings, see `sigma/pipelines/sumologic/sumologic.py`.
+| Option | Default | Description |
+|--------|---------|-------------|
+| `min_confidence` | `0.25` | Minimum confidence score to allow conversion (0.0 disables threshold) |
+| `include_confidence_metadata` | `true` | Include `mapping_confidence` object in output |
+| `fail_on_unmapped_logsource` | `false` | Error if rule's log source has no vendor/product mapping |
 
 ## Limitations
 
-### General Limitations
-
-- **Correlation rules**: Not yet supported (Sigma correlation features)
-- **Regex modifiers**: Limited support for complex regex patterns
-- **Custom fields**: Fields not in the standard mapping must be manually mapped
-
-### Unsupported Fields
-
-#### Data Field (Windows Event Logs)
-
-The `Data` field in Windows Event Logs has **smart conversion** that automatically handles structured patterns but blocks arbitrary string matching.
-
-**How It Works:**
-
-✅ **Supported (automatically converted):**
-- **Key=Value patterns** (PowerShell logs): `Data|contains: 'EngineVersion=2.'` → `EventData.EngineVersion|contains: '2.'`
-- **Key:Value patterns** (MSSQL/App logs): `Data|contains: 'statement:DROP TABLE'` → `EventData.statement|contains: 'DROP TABLE'`
-
-❌ **Not supported (conversion fails):**
-- **Arbitrary strings**: `Data|contains: 'Net.WebClient'` - no field name to extract
-
-**Reason:** CSE parses Windows Event Log Data XML into structured `EventData.*` fields. Arbitrary string matching requires knowing which field contains the string, which isn't possible from the Data field alone.
-
-**Impact:** ~12 Sigma rules use arbitrary Data field patterns (primarily PowerShell Classic command detection rules).
-
-**Examples:**
-
-**Automatic Conversion (no changes needed):**
-```yaml
-# PowerShell downgrade attack detection
-detection:
-  selection:
-    Data|contains: 'EngineVersion=2.'  # Automatically converted to EventData.EngineVersion
-  condition: selection
-```
-↓ Converts to:
-```
-EventData.EngineVersion matches /.*2\..*/
-```
-
-**Manual Rewrite Required:**
-```yaml
-# Before (fails - arbitrary string)
-detection:
-  selection:
-    Data|contains: 'Net.WebClient'
-  condition: selection
-```
-↓ Rewrite to:
-```yaml
-# After (works - specific field)
-detection:
-  selection:
-    EventData.ContextInfo|contains: 'Net.WebClient'
-  condition: selection
-```
-
-**Common EventData field mappings:**
-- `EventData.TargetUserName` → `user_username`
-- `EventData.LogonType` → `logonType`
-- `EventData.IpAddress` → `srcDevice_ip`
-- `EventData.CommandLine` → `commandLine`
-- `EventData.ContextInfo` → Raw PowerShell context (for command/script content)
-- See CSE schema documentation for complete list
-
-#### Keywords Field
-
-Similarly, the `keywords` field (generic full-text search) is not supported as CSE requires structured field-based queries.
+- **Correlation rules** — Not supported (Sigma correlation features)
+- **Data field arbitrary strings** — `Data|contains: 'Net.WebClient'` cannot be converted (~12 Sigma rules affected). Structured patterns like `Data|contains: 'EngineVersion=2.'` are handled automatically.
+- **Keywords field** — Not supported (CSE requires structured field-based queries)
+- **Complex regex** — Limited support for advanced regex modifiers
 
 ## Development
 
-### Running Tests
-
 ```bash
-# Install development dependencies
-pip install -e .[dev]
+# Install dev dependencies
+pip install -e ".[dev]"
 
-# Run unit tests
+# Run tests
 pytest
 
 # Run with coverage
 pytest --cov=sigma --cov-report=term
 ```
 
-### Integration Test
-
-```bash
-# Test package installation and conversion
-./tests/test_integration.sh
-```
-
-## Contributing
-
-Contributions are welcome! Please:
-
-1. Fork the repository
-2. Create a feature branch
-3. Add tests for new functionality
-4. Ensure all tests pass
-5. Submit a pull request
-
-See [PUBLISHING.md](PUBLISHING.md) for information on publishing releases.
-
-## Maintainer
-
-This backend is maintained by:
-
-- **Sumo Logic** | [GitHub](https://github.com/SumoLogic) | [Website](https://www.sumologic.com)
-
 ## Resources
 
 - [Sumo Logic Cloud SIEM Documentation](https://www.sumologic.com/help/docs/cse/)
 - [Sigma Rule Specification](https://github.com/SigmaHQ/sigma-specification)
 - [pySigma Documentation](https://github.com/SigmaHQ/pySigma)
+- [sigma-cli](https://github.com/SigmaHQ/sigma-cli)
 
 ## License
 
-This project is licensed under the GNU Lesser General Public License v3.0 - see the [LICENSE](LICENSE) file for details.
+LGPL-3.0 — see [LICENSE](LICENSE).
