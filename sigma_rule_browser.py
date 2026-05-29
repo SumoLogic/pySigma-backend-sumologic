@@ -1164,7 +1164,8 @@ def main():
 
                             with col_info:
                                 st.markdown("#### 🔍 Troubleshooting")
-                                st.markdown("""
+                                st.markdown(
+                                    """
                                 **Common Issues:**
                                 - Unsupported field mappings
                                 - Invalid YAML syntax
@@ -1173,7 +1174,8 @@ def main():
                                 - Pipeline processing errors
 
                                 Review the error message and the original rule to identify the issue.
-                                """)
+                                """
+                                )
                         else:
                             st.warning(
                                 "Original YAML not available (file read may have failed)"

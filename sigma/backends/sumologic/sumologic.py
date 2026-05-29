@@ -1,4 +1,3 @@
-
 from sigma.conversion.state import ConversionState
 from sigma.conversion.base import TextQueryBackend
 from sigma.conditions import ConditionItem, ConditionAND, ConditionOR, ConditionNOT
