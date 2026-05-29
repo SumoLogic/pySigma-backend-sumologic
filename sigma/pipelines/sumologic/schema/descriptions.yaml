@@ -1,0 +1,3762 @@
+---
+field_name: accountId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A unique identifier tied to an organizational account, such as a tenant. Common with cloud services where sub-accounts or multiple tenants can be present. Not to be used as a user account identifier.
+example_usage:
+ - Cloud:
+    example_pairs:
+      AWS AccountID: 123456789012
+      Azure TenantID: ef3a83b9-3c2f-44fd-a9c5-36b382e3bfdf
+      Google Org ID: 34739118321
+related_attributes:
+  resource: Account may be a resource in certain contexts, such as when an accounts attributes are being acted upon administratively. Resource may also refer to a resource running under an account within a cloud environment.
+  cloud_provider: The accountId may refer to an account within a specific cloud provider.
+---
+field_name: action  
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Action summarizes an operation undertaken by a device or user and recorded in a log.
+example_usage:
+ - Firewalls:
+    example_values:
+      - Allow
+      - Block
+      - Accept
+      - Deny
+ - Antivirus:
+    example_values: 
+      - Scanned
+      - Quarantined
+      - Cleaned
+      - Deleted
+ - Email:
+    example_values: 
+      - Sent
+      - Received
+      - Mark as Spam
+      - Delete
+ - Audit:
+    example_values: 
+      - Access Granted
+      - Access Denied
+      - Log On
+      - Log Off
+      - User Added
+      - Group Added
+      - User Removed
+      - Group Removed
+      - Policy Add
+      - Policy Removed
+      - Policy Updated
+related_attributes:
+  commandLine: Action may be the sum result of an executed command, or it may describe the attempt, not necessarily the result. An action carried out via command line, or a failed attempt to perform an action via command line.
+  changeType: Action may capture audit activities. Add, remove, and update as types of actions within an audit context.
+  description: Description and action may be synonymous. As the description explains the event a log captures, the event described may be an action taken.
+  success: This boolean result may represent the outcome of an action taken. Log on success, where log on is the action and success is true.
+---
+field_name: Application
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A service or software application referenced in a log indicating its execution, presence, or as context for a given event.
+example_usage:
+ - Audit:
+      example_values: 
+      - Scheduled Task
+      - Installed/Uninstalled 
+      - Microsoft Office Word
+ - Application Layer Services:
+      example_values:
+      - HTTP
+      - SMTP
+      - FTP
+      - DHCP
+ - Authentication:
+      example_values:
+      - Logon Process/Service
+ - Cloud:
+      example_keys:
+      - AWS eventSource
+      - ecr, s3, ec2, iam
+      - Azure Target Resource Name
+      - User defined applications
+related_attributes:
+  baseImage: A process image may be an application independently or a component of an application, but baseImage is reserved for specific executable processes (e.g sysmon.exe), where application is a broader descriptor.
+---
+field_name: baseImage
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name of an executable process. Often found in process auditing and malware detection events.
+example_usage:
+ - Audit:
+    example_values:
+      - notepad.exe
+      - cmd.exe
+      - powershell.exe
+      - ssh
+      - iTerm2
+ - Endpoint:
+    example_values:
+      - qweelknlkoiweube.exe (a suspicious process)
+related_attributes:
+  application: A process image may be an application independently or a component of an application, but baseImage is reserved for specific executable processes (e.g sysmon.exe), where application is a broader descriptor.
+  threat_name: A threat name usually describes a specific signature of attack or malware (e.g, conficker.c). A base image may serve as the delivery mechanism for a threat, but the actual threat name would most likely be distinct from the base image.
+  parentBaseImage: Parent base image is the process which spawned this process.
+  grandparentBaseImage: Grandparent base image is the process which spawned the parent process.
+---
+field_name: bytesIn
+population_method: mapping
+type: long  
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Amount of data received in bytes
+example_usage:
+ - Network:
+    example_keys:
+      - bytesIn
+      - in
+      - received
+      - bytes_received
+      - rcvdbyte
+      - srcBytes
+related_attributes:
+  file_size: File size may be the sum of received bytes such as in a file download.
+---
+field_name: bytesOut
+population_method: mapping
+type: long  
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Amount of data sent in bytes
+example_usage:
+ - Network:
+    example_keys:
+      - bytesOut
+      - out
+      - sent
+      - bytes_sent
+      - sentbyte
+      - dstBytes
+related_attributes:
+  file_size: File size may be the sum of sent bytes such as in a file upload.
+---
+field_name: changeTarget
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The user, group, policy or other resource which is to be or has been modified, deleted, or created.
+example_usage:
+ - Cloud:
+     example_pairs:
+      Azure Audit: user added to a group, created user, member added to role
+      AWS Cloudtrail: The trail deleted, created or modified
+      AWS IAM: The IAM managed policy deleted, the user for which a IAM managed policy was added/deleted
+ - User and Group Management:
+    example_values:
+      - The user created
+      - The user deleted
+      - The user account locked/unlocked
+      - The group modified
+ - Firewall/Proxy:
+    example_values:
+      - The ACL added
+      - The ACL deleted
+      - The ACL modified
+      - The policy added
+      - The policy deleted
+      - The policy modified
+related_attributes:
+  changeType: Describes the nature of the modification performed or to be performed (modify, delete, create) and often the category of the object acted upon (user, group, policy, or other resource).
+  user_username: A user may be the target of a change, but in this case username would be the user initiating the change, while the user being modified, created, or deleted is the change target.
+---
+field_name: changeType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The nature of the modification (modify, delete, create) and often the category of the object to be acted upon (user, group, policy, or other resource).
+example_usage:
+ - Cloud:
+    example_pairs:
+      Azure Audit: Add member to role, create user, conditional access policy modified
+      AWS Cloudtrail: Trail deleted, added, or modified
+      AWS IAM: IAM policy deleted, IAM policy added to user
+ - User and Group Management:
+    example_values:
+      - User created
+      - User deleted
+      - User account locked/unlocked
+      - Group modified
+ - Firewall/Proxy:
+    example_values:
+      - ACL added
+      - ACL deleted
+      - ACL modified
+      - Policy added
+      - Policy deleted
+      - Policy modified
+related_attributes:
+  changeTarget: The user, group, policy, or other resource to be acted upon in the manner described by changeType.
+  description: This may overlap with changeType, but description is more generalized. Description provides a summary of the high level meaning of log in a typically human readable form.
+  success: This boolean result may represent the outcome of a change. User create success, where User create is the changeType and success is true
+---
+field_name: commandLine
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The instruction or set of instructions inputted into a text interface such as the command prompt (cmd.exe) or PowerShell in Windows, or terminal on Unix based systems.
+example_usage:
+ - Windows (cmd, PowerShell):
+    example_values:
+      - ipconfig /all
+      - netsh interface ip add dns "connection name" 208.67.222.222
+      - Add-ADGroupMember -Identity SvcAccPSOGroup -Members SQL01,SQL02
+ - Terminal:
+    example_values:
+      - ssh testuser@10.0.0.55
+      - chmod u+r,g+x filename>
+related_attributes:
+  parentCommandLine: In some instances another process may have an associated command line that is used to create child processes and command lines. This would be associated with a parentBaseImage.
+  grandparentCommandLine: The command line associated with the grandparent process that spawned the parent process.
+  baseImage: Often commandLine will contain the process executing the instructions as well as arguments, the complete string should be captured into commandLine.
+---
+field_name: description
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The summary conveying the high level meaning of a log message in a human readable form. In some circumstances no summary is provided in the log, this field is often manually defined in the mapping as a constant or as a lookup based on event IDs in the log message.
+example_usage:
+ - General:
+    example_keys:
+      - event_name
+      - name
+      - message
+      - msg
+      - description
+      - title
+      - Detail
+      - activity
+      - operationName
+      - resultReason
+      - type
+related_attributes:
+  action: Since description summarizes an event, the action may also be captured within description. Description is typically more verbose than action.
+  changeType: Since description summarizes an event, changeType may also be captured within description. Description is typically more verbose than changeType.
+  success: The boolean success may relate to description in that it summarizes the outcome in a log as true or false.
+---
+field_name: device_hostname 
+population_method: mapping
+type: string
+entity_type: hostname
+enrichment_attribute: false
+description: |-
+ The computer name that generated the log message. Common examples include, but are not limited to, the endpoint reporting an infection or the network appliance reporting allowed or blocked network traffic. 
+ In cases where the log data has a source or destination context, there are situations where identical data is populated in one of those fields and this field. An example would be authentication logs from a firewall. The device_hostname would be the same as the dstDevice_hostname because the firewall is reporting a network authentication log about itself.
+example_usage:
+ - Network:
+    example_keys:
+      - Appliance
+      - Device_name
+      - Hostname
+      - Devname
+ - Endpoint:
+    example_keys:
+      - Endpoint
+      - Device_name
+      - Hostname
+ - Operating System:
+    example_keys:
+      - Computer
+      - serverName
+      - endpoint_hostname
+      - Hostname
+      - host_name
+related_attributes:
+  device_ip: The IP address which the device_hostname resolves to
+  device_mac: The physical address for the device_hostname
+  device_natIp: The network address translated IP address of the device_hostname
+  device_osName: The operating system present on the device_hostname
+---
+field_name: device_ip   
+population_method: mapping
+type: string
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The internet protocol (IP) address of a computer that generated the log message. Common examples include, but are not limited to, the endpoint reporting an infection or the network appliance reporting allowed or blocked network traffic. 
+ In cases where the log data has a source or destination context, there are situations where identical data is populated in one of those fields and this field. An example would be authentication logs from a firewall. The device_ip would be the same as the dstDevice_ip because the firewall is reporting a network authentication log about itself.
+example_usage:
+ - Network:
+    example_keys:
+      - Appliance
+      - Device_ip
+      - DeviceIp
+      - Devip
+      - client_ip
+ - Endpoint:
+    example_keys:
+      - Endpoint
+      - Device_ip
+      - IP
+ - Operating System:
+    example_keys:
+      - Computer
+      - serverip
+      - Endpoint_ip
+      - client_ip
+      - ip
+      - Host_ip
+      - Workstation
+      - Server
+related_attributes:
+  device_hostname: The hostname which the device_ip resolves as.
+  device_mac: The physical address for the device with the device_ip
+  device_natIp: The network address translated IP address of the device_ip
+  device_osName: The operating system present on the device with the device_ip
+---
+field_name: device_mac  
+population_method: mapping
+type: string
+entity_type: mac
+enrichment_attribute: false
+description: |-
+ The media access control (MAC) ID of the device that generated the log message. Common examples include, but are not limited to, the endpoint reporting an infection or the network appliance reporting allowed or blocked network traffic. 
+ In cases where the log data has a source or destination context, there are situations where identical data is populated in one of those fields and this field. An example would be authentication logs from a firewall. The device_mac would be the same as the dstDevice_mac because the firewall is reporting a network authentication log about itself.
+example_usage:
+ - Network:
+    example_keys:
+      - Device_mac
+      - Devicemac
+      - Dvcmac
+      - Macaddr
+      - Mac_address
+      - mac
+ - Endpoint:
+    example_keys:
+      - Endpoint_mac
+      - Device_mac
+      - dvcmac
+      - Macaddr
+      - Mac_address
+      - mac
+ - Operating System:
+    example_keys:
+      - endpoint_mac
+      - macaddr
+      - Host_mac
+      - mac
+related_attributes:
+  device_hostname: The hostname associated with the device_mac
+  device_ip: The IP address associated with the device_mac
+  device_natIp: The network address translated IP address associated with the device_mac
+  device_osName: The operating system present on the device with the device_mac
+---
+field_name: device_natIp
+population_method: mapping
+type: string
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The external network address translated (NAT) IP address of the device that generated the log message. Common examples include, but are not limited to, the endpoint reporting an infection or the network appliance reporting allowed or blocked network traffic. 
+ In cases where the log data has a source or destination context, there are situations where identical data is populated in one of those fields and this field. An example would be authentication logs from a firewall. The device_natIp would be the same as the dstDevice_natIp because the firewall is reporting a network authentication log about itself.
+example_usage:
+ - Network:
+    example_keys:
+      - nat_ip
+      - Device_natIP
+      - DevNATip
+      - client_natIP
+      - destinationTranslatedAddress
+ - Endpoint:
+    example_keys:
+      - Device_natIP
+      - natIP
+related_attributes:
+  device_hostname: The hostname which the device_natIP resolves as.
+  device_mac: The physical address for the device with the device_natIP
+  device_natIp: The network address translated IP address of the device_natIP
+  device_osName: The operating system present on the device with the device_natIP
+---
+field_name: device_osName   
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The operating system name present on the computer that generated the log message. Common examples include, but are not limited to, the endpoint reporting an infection or the network appliance reporting allowed or blocked network traffic. 
+ In cases where the log data has a source or destination context, there are situations where identical data is populated in one of those fields and this field. An example would be authentication logs from a firewall. The device_osName would be the same as the dstDevice_osName because the firewall is reporting a network authentication log about itself.
+example_usage:
+ - Network:
+    example_keys:
+      - osName
+      - ClientOSVersion
+ - Endpoint:
+    example_keys:
+      - OS_MAJOR_VERSION
+      - os_version
+      - device_version
+ - Other:
+    example_keys:
+      - Operating_System
+      - AD-Operating-System
+      - os
+related_attributes:
+  http_userAgent: A user agent string may contain the operating system name of a device, but a user agent string contains additional information related to a device requesting information via the web and http_userAgent is intended for that purpose alone. Device_osName is similarly only intended to capture the operating system name of a given device.
+  device_hostname: The hostname of the device which the device_osName is associated with
+  device_ip: The IP address of the device which the device_osName is associated with
+  device_mac: The physical address for the device associated with the device_osName
+  device_natIp: The network address translated IP address of the device which the device_osName is associated with
+---
+field_name: device_uniqueId 
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The vendor or product specific identifier for a computer that generated the log message. Common examples include, but are not limited to, the endpoint reporting an infection or the network appliance reporting allowed or blocked network traffic. This field is also frequently used by cloud providers to identify instances.
+ In cases where the log data has a source or destination context, there are situations where identical data is populated in one of those fields and this field. An example would be authentication logs from a firewall. The device_mac would be the same as the dstDevice_mac because the firewall is reporting a network authentication log about itself.
+example_usage:
+ - Cloud:
+    example_keys:
+      - instanceId
+      - tenantId
+      - organizationId
+ - Endpoint:
+    example_keys:
+      - infected.device.id
+      - Device_id
+      - resourceId
+related_attributes:
+  device_hostname: A unique ID may refer to a hostname, but is typically generated by a product and assigned to a device.
+  device_ip: A unique ID may refer to a host IP, but is typically generated by a product and assigned to a device.
+  device_mac: A unique ID may refer to a device's specific MAC address, but is typically generated by a product and assigned to a device.
+---
+field_name: device_type
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The instance, compute, or machine type. Typically used in cloud environments to describe computing specifications.
+example_usage:
+ - Cloud:
+    example_keys:
+      - instanceType
+    example_values:
+      - m4.4xlarge
+related_attributes:
+  device_hostname: The name of the host the type describes the computing attributes of
+  device_ip: The IP address of the host the type describes the computing attributes of
+  device_mac: The MAC address of the host the type describes the computing attributes of
+---
+field_name: device_image
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The snapshot of the state of a device or similar which can be used to deploy or reproduce a system. E.g. A VM image, a container image. 
+example_usage:
+ - Cloud:
+    example_keys:
+      - imageId
+    example_values:
+      - ami-09df8cd00t05dce77
+related_attributes:
+  resource: The resource being acted upon may be a device image
+  device_type: The device type potentially describes the compute attributes of an image
+  device_hostname: The name of the host created from the image
+  device_ip: The IP address of the host created from the image
+  device_mac: The MAC address of the host created from the image
+---
+field_name: device_container_name
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name provided to a discreet container which packages together the elements required to run software.
+example_usage:
+ - Container:
+    example_keys:
+      - container.name
+      - container_name
+related_attributes:
+  resource: Resource may also be used to capture a container name
+  device_container_id: The unique identifier tied to the named container
+  device_container_runtime: The runtime under which the named container is running
+  device_k8s_pod: The pod within which the container may be running
+---
+field_name: device_container_id
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The unique identifier provided to a discreet container which packages together the elements required to run software.
+example_usage:
+ - Container:
+    example_keys:
+      - container.id
+      - container_id
+related_attributes:
+  device_container_name: The name given to the container which the container ID maps to
+  device_container_runtime: The runtime under which the container is running
+---
+field_name: device_container_runtime
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The provider name of the engine whine underpins the container. E.g. Docker, AWS Lambda, containerd
+example_usage:
+ - Container:
+    example_keys:
+      - container.runtime
+      - container_runtime
+      - runtime
+    example_values:
+      - Docker
+      - Windows Container
+      - containerd
+related_attributes:
+  device_container_id: The unique identifier of the containter running within the runtime
+  device_container_name: The name of the containter running within the runtime
+---
+field_name: device_k8s_deployment
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The deployment name described in the log
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - InvolvedObject.Kind.Name
+related_attributes:
+  device_k8s_pod: The name of the pod which the deployment manages 
+---
+field_name: device_k8s_namespace
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The namespace name within which resources are running as described in the log
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - namespace
+related_attributes:
+  device_k8s_pod: The name of the pod within the namespace
+  device_k8s_normalizedPodName: Enrichment attribute consisting of the namespace and pod names
+---
+field_name: device_k8s_pod
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name given to a pod described in the log
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - InvolvedObject.Kind.Name
+related_attributes:
+  device_container_id: The unique identifier of a container inside a pod
+  device_container_name: The name of a container inside a pod
+  device_k8s_namespace: The namespace which the pod belongs to. Together the two can help to uniquely identify a pod within an organization.
+  device_k8s_normalizedPodName: Enrichment attribute consisting of the namespace and pod names
+---
+field_name: device_k8s_normalizedPodName
+population_method: enrichment
+type: string
+entity_type: pod
+enrichment_attribute: true
+description: |-
+ Combination of namespace and pod to allow organizations to identify pods uniquely within their environment.
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - InvolvedObject.Kind.Name
+related_attributes:
+  device_container_name: The name of a container inside a pod
+  device_k8s_namespace: The namespace which the pod belongs to. Together the two can help to uniquely identify a pod within an organization.
+---
+field_name: device_k8s_normalizedDeploymentName
+population_method: enrichment
+type: string
+entity_type: deployment
+enrichment_attribute: true
+description: |-
+ Combination of namespace and pod to allow organizations to identify pods uniquely within their environment.
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - InvolvedObject.Kind.Name
+related_attributes:
+  device_k8s_namespace: The namespace which the deployment belongs to. Together the two can help to uniquely identify a deployment within an organization.
+---
+field_name: device_k8s_normalizedReplicaSetName
+population_method: enrichment
+type: string
+entity_type: replicaSet
+enrichment_attribute: true
+description: |-
+ Combination of namespace and replicaSet to allow organizations to identify replicaSets uniquely within their environment.
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - InvolvedObject.Kind.Name
+related_attributes:
+  device_container_name: The name of a container inside a pod
+  device_k8s_namespace: The namespace which the replicaSet belongs to. Together the two can help to uniquely identify a replicaSet within an organization.
+---
+field_name: device_k8s_replicaSet
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The replica set name described in the log
+example_usage:
+ - Container Orchestration:
+    example_keys:
+      - InvolvedObject.Kind.Name
+related_attributes:
+  device_k8s_deployment: The deployment for which the replica set manages the pods within
+  device_k8s_pod: The pod name which the replica set manages within a deployment
+---
+field_name: dns_query
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The entire DNS request made from the client machine to the DNS server.
+example_usage:
+- DNS:
+    example_pairs:
+      Query: subdomain.domain.tld IN A + (1.2.3.4)
+    example_values:
+      - 1.1.1.1.in-addr.arpa IN PTR + (1.2.3.4)
+      - 1.2.3.in-addr.arpa IN SOA -SE (1.2.3.4)
+related_attributes:
+  dns_queryDomain: An element of the full DNS query if the query contains a domain
+  dns_queryType: DNS query type is an element of the full query
+  dns_returnCode: The message or code outcome of the query
+---
+field_name: dns_queryDomain
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The fully qualified domain name being queried for in a DNS request if present
+example_usage:
+- DNS:
+    example_pairs:
+      domain: subdomain.domain.tld
+    example_keys:
+      - domain_name
+related_attributes:
+  dns_query: The full DNS query of which the query domain may be an element
+  dns_queryType: DNS query type is an element of the full DNS query
+  dns_replyDomain: May be the same domain as the query domain, but is only seen upon reply to a query
+  user_authDomain: Distinct from a DNS query or reply domain, the authDomain is for authentication logs not DNS. 
+---
+field_name: dns_queryType
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The type of DNS record which is being queried for by the client
+example_usage:
+- DNS:
+    example_pairs:
+      queryType: A
+      query_type: PTR
+      qtype: MX
+      Qtype_name: SVR
+related_attributes:
+  dns_query: The full DNS query of which the query domain may be an element
+  dns_queryDomain: An element of the full DNS query if the query contains a domain
+---
+field_name: dns_reply   
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The DNS reply which can be a single record or multiple records concatenated into a string.
+example_usage:
+ - DNS:
+    example_pairs:
+      Answers: 1.2.3.4, 1.2.3.5, 1.2.3.6
+    example_keys:
+     - ipaddr
+related_attributes:
+  dns_replyDomain: An element of the dns reply if the reply contains a domain name
+  dns_replyIp: An element of the dns reply if the reply contains an IP address
+---
+field_name: dns_replyDomain
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The domain contained within the DNS if the reply contains a domain.
+example_usage:
+ - DNS:
+    example_pairs:
+      domain: example.biz
+related_attributes:
+  dns_reply: The full DNS reply in which the DNS return code or name is an element
+  user_authDomain: Distinct from a DNS query or reply domain, the authDomain is for authentication logs not DNS. 
+---
+field_name: dns_replyIp
+population_method: mapping
+type: string    
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The IP address contained within the DNS if the reply contains an IP address.
+example_usage:
+ - DNS:
+    example_pairs:
+      Answer: 1.2.3.4, 1.2.3.5, 1.2.3.6
+    example_keys:
+      - ipaddr
+related_attributes:
+  dns_reply: The full DNS reply in which the DNS return code or name is an element
+---
+field_name: dns_returnCode
+population_method: mapping
+type:
+entity_type:
+entity_attribute:
+description: -|
+ The code or message indicating the outcome of a DNS request.
+example_usage:
+ - DNS:
+    example_pairs:
+      rcode: 0 (NOERROR)
+      dnsReturnCode: 3 (NXDOMAIN)
+      Response_code: 5 (REFUSED)
+related_attributes:
+  dns_query: The full DNS query for which the return code or name is provided in response to.
+---
+field_name: dstDevice_hostname
+population_method: mapping
+type: string
+entity_type: hostname
+enrichment_attribute: false
+description: |-
+ The name of the host for which network traffic is destined.
+example_usage:
+ - Network:
+    example_keys:
+      - Dst
+      - Destination
+      - Dsthost
+      - Desthost
+      - Dhost
+      - DestinationHostname
+ - Endpoint:
+    example_keys:
+      - targetHostname
+      - target_hostname
+      - endpoint_hostname
+related_attributes:
+  device_hostname: Device hostname is the host generating the log message. In the example of an authentication to a firewall the device_hostname may also be the same as the dstDevice_hostname because the firewall is reporting a network authentication log about itself
+---
+field_name: dstDevice_ip
+population_method: mapping
+type: string
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The IP address of the host for which network traffic is destined.
+example_usage:
+ - Network:
+    example_keys:
+      - Dst
+      - Destination
+      - Dstip
+      - Destip
+      - Dip
+      - DestinationIp
+ - Endpoint:
+    example_keys:
+      - targetip
+      - target_ip
+      - endpoint_ip
+related_attributes:
+  device_ip: Device IP is the host generating the log message. In the example of an authentication to a firewall the device_ip may also be the same as the dstDevice_ip because the firewall is reporting a network authentication log about itself
+---
+field_name: dstDevice_mac
+population_method: mapping
+type: string
+entity_type: mac
+enrichment_attribute: false
+description: |-
+ The media access control (MAC) address of the host for which network traffic is destined.
+example_usage:
+ - Network:
+    example_keys:
+      - Dstmac
+      - Destinationmac
+      - Dstmac
+      - Destmac
+      - Dmac
+      - Destinationmac
+ - Endpoint:
+    example_keys:
+      - targetmac
+      - target_mac
+      - endpoint_mac
+related_attributes:
+  device_mac: Device MAC is for the host generating the log message. In the example of an authentication to a firewall the device_mac may also be the same as the device with the dstDevice_mac because the firewall is reporting a network authentication log about itself
+---
+field_name: dstDevice_natip
+population_method: mapping
+type: string
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The external network address translated (NAT) IP address for which network traffic is destined.
+example_usage:
+ - Network:
+    example_keys:
+      - dstnatIp
+      - Dstnatip
+      - Nat_destination_ip
+      - NATDestinationIP
+      - destinationTranslatedAddress
+ - Proxy:
+    example_keys:
+      - dst
+      - dst_ip
+      - destinationIP
+ - Endpoint:
+    example_keys:
+      - targetnatip
+      - target_nat_ip
+      - endpoint_nat_ip
+related_attributes:
+  device_natIp: Device NAT IP is for the network address translated IP of the host generating the log message. In the example of an authentication to a firewall the device_natIp may also be the same as the dstDevice_natip because the firewall is reporting a network authentication log about itself
+---
+field_name: dstDevice_osName
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The operating system running on the host for which network traffic is destined.
+example_usage:
+ - Network:
+    example_keys:
+      - dstOs
+      - destinationOs
+      - destdeviceOs
+ - Endpoint:
+    example_keys:
+      - targetos
+      - target_os
+      - endpoint_os
+related_attributes:
+  device_osName: Device OS name is the operating system of the host generating the log message. In the example of an authentication to a firewall the device_osName may also be the same as the dstDevice_osName because the firewall is reporting a network authentication log about itself
+---
+field_name: dstDevice_uniqueId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The unique ID of the host which network traffic is destined to. This field is frequently used by cloud providers to identify instances.
+example_usage:
+ - Network:
+    example_keys:
+      - DstId
+      - Destinationuid
+      - DestinationhostId
+      - resource.instanceDetails.instanceId
+      - Dstids.instance
+ - Endpoint:
+    example_keys:
+      - DestUniqueid
+      - Dst_uniqueid
+related_attributes:
+  device_uniqueId: Device unique ID is of the host generating the log message. In the example of a firewall recording traffic originating from itself, the device unique ID would be the same as the source unique ID.
+---
+field_name: dstDevice_type
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The instance, compute, or machine type which network traffic is destined to. Typically used in cloud environments to describe computing specifications.
+example_usage:
+ - Cloud:
+    example_keys:
+      - DstinstanceType
+    example_values:
+      - m4.4xlarge
+related_attributes:
+  dstDevice_hostname: The name of the host the type describes the computing attributes of
+  dstDevice_ip: The IP address of the host the type describes the computing attributes of
+  dstDevice_mac: The MAC address of the host the type describes the computing attributes of
+---
+field_name: dstDevice_image
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The snapshot of the state of a device or similar which can be used to deploy or reproduce a system for which traffic is destined. E.g. A VM image, a container image. 
+example_usage:
+ - Cloud:
+    example_keys:
+      - imageId
+    example_values:
+      - ami-09df8cd00t05dce77
+related_attributes:
+  resource: The resource being acted upon may be a device image
+  dstDevice_type: The destination device type potentially describes the compute attributes of an image
+  dstDevice_hostname: The name of the destination host created from the image
+  dstDevice_ip: The IP address of the destination host created from the image
+  dstDevice_mac: The MAC address of the destination host created from the image
+---
+field_name: dstPort
+population_method: mapping
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The port number for which the network traffic is destined
+example_usage:
+ - General:
+    example_keys:
+      - Dst_port
+      - Remote_port
+      - Dport
+      - Dest_port
+      - Destination_port
+      - Dpt
+      - pxyPort
+      - id.resp_p
+related_attributes:
+  ipProtocol: Application (OSI Layer 7) can be inferred by combining destination port and the IP protocol. For example, HTTP traffic can be inferred by seeing TCP over port 80.
+  srcPort: The port number from which the network traffic bound to the destination originated.
+---
+field_name: email_messageId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A semi-unique identifier for an e-mail message generated by the sending mail system often ending with the fully qualified domain name of the sending system. It is not completely unique as copies of the same e-mail message, such as one sent to multiple recipients, may have the same message ID. Different mail systems may form message IDs in different ways.
+example_usage:
+ - E-Mail:
+    example_pairs:
+      messageId: 123456789.11.1234567891234@mailbox01.electronic-mail.com
+      Message-id: 4867a3d78a50438bad95c0f6d072fca5@mailbox01.electronic-mail.com
+      NetworkMessageId: 396D43DC-B699-4918-883C-D504DC5E3731
+      ClientId: BAH4QLS0txJo5Rhev9wEjXV=R-Kvb1mGHB1MrwAoZNogFX-aOpg@mail.gmail.com
+related_attributes:
+  file_uid: A saved e-mail may have a file_uid generated for it, but this is distinct from the message ID which the mail system generates.
+---
+field_name: email_sender    
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Address of the e-mail sender. To be used only for logs related specifically to e-mail activity (spam filtering, message tracking, etc).
+example_usage:
+ - E-Mail:
+    example_keys:
+      - Sender
+      - fromHeader
+      - from
+related_attributes:
+  user_email: This field is to be used in cases where a log has an e-mail address but is not related to e-mail activity.
+  user_username: This field is to be used in cases where a log has a username formed as an e-mail address but is not related to e-mail activity.
+---
+field_name: email_subject
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Subject line of an e-mail
+example_usage:
+ - E-Mail:
+    example_keys:
+      - subjectText
+      - Subject
+      - Email_Subject
+related_attributes:
+---
+field_name: errorCode
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Machine code or shortform message that represents a specific error.
+example_usage:
+ - Authentication:
+    example_pairs:
+      status: 0x000005e
+      substatus: 0xc0000064
+      errorCode: 50074
+related_attributes:
+ http_response_statusCode: An HTTP response code may be an error code (404), but the more specific field should be used in that case.
+ dns_returnCode: A DNS return code may be an error code, but the more specific field should be used in that case.
+ errorText: The human readable description that corresponds to the error code.
+---
+field_name: errorText
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Human readable description of a specific error.
+example_usage:
+ - Authentication:
+    example_pairs:
+      status: There are currently no logon servers available to service the logon request
+      substatus: User logon with misspelled or bad user account
+      failureReason: User did not pass the MFA challenge
+related_attributes:
+ http_response_statusText: An HTTP response code may be an error code (404), but the more specific field should be used in that case.
+ errorCode: The machine readable or shortform message that errorText describes.
+---
+field_name: file_basename
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name and extension (if applicable) of a file without the path.
+example_usage:
+ - Storage:
+    example_keys:
+      - item_name
+ - Network:
+    example_keys:
+      - fileId
+      - URL_Filename
+      - target_file_name
+ - Email:
+    example_keys:
+      - FileName
+      - AttachmentFileName
+ - Endpoint:
+    example_keys:
+      - Object
+      - fname
+      - Filename
+      - processName
+      - Process
+      - applicationName
+related_attributes:
+  baseImage: A file name may also be a baseImage if that file is a process and the log refers to activity related to that process
+---
+field_name: file_hash_md5
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ File hash created using the 128 bit MD5 algorithm.
+example_usage:
+ - General:
+    example_keys:
+      - md5
+      - md5sum
+      - md5string
+      - file_hash_md5
+    example_pairs:
+      Hash: c34e0f1517042562cc8ca63de7f619b0
+related_attributes:
+  file_basename: The name of the file with the md5 hash
+  baseImage: The name of the process with the md5 hash
+---
+field_name: file_hash_pehash
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Hash value for Portable Executable (PE) file binaries created using the PEHash algorithm.
+example_usage:
+ - General:
+    example_keys:
+      - PEHash
+related_attributes:
+  file_basename: The name of the file with the PEHash
+  baseImage: The name of the process with the PEHash
+---
+field_name: file_hash_sha1
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Hash of the file generated using the SHA1 algorithm
+example_usage:
+ - General:
+    example_keys:
+      - sha1
+      - file_hash_sha1
+    example_pairs:
+      Hash: B2A2BBCFB69B1F0982C4B82055DAD9BAE4384E4B
+related_attributes:
+  file_basename: The name of the file with the SHA1 hash
+  baseImage: The name of the process with the SHA1 hash
+---
+field_name: file_hash_sha256
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Hash of the file generated using the SHA256 algorithm
+example_usage:
+ - General:
+    example_keys:
+      - sha256
+      - file_hash_sha256
+    example_pairs:
+      Hash: 4eab21e614e23dfab19bef57f64c3eaf13d345759fb4823f019d6509715c6f08
+related_attributes:
+  file_basename: The name of the file with the SHA256 hash
+  baseImage: The name of the process with the SHA256 hash
+---
+field_name: file_hash_ssdeep
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The fuzzy hash of the file generated using ssdeep.
+example_usage:
+ - General:
+    example_keys:
+      - ssdeep
+      - file_hash_ssdeep
+    example_pairs:
+      Hash: 12288:cE/Cymi/C7T8244lMoa5+0knaJq7wKiW5UQ8dWQcFU5MSf1Qa5f+RhfTmAFCYt:Dm8h47a5zkGqElWw7cu5Qy2p
+related_attributes:
+  file_basename: The name of the file with the ssdeep hash
+  baseImage: The name of the process with the ssdeep hash
+---
+field_name: file_hash_imphash
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ File hash created using the Import Hash (Imphash) algorithm.
+example_usage:
+ - General:
+    example_keys:
+      - Imphash
+      - file_hash_imphash
+    example_pairs:
+      Hash: 81cf1dea5873d301c6baca589ca78828
+related_attributes:
+  file_basename: The name of the file with the ssdeep hash
+  baseImage: The name of the process with the ssdeep hash
+---
+field_name: file_mimeType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Two-part media type (MIME type/subtype) indicating the nature and format of a file transmitted over the internet.
+example_usage:
+ - General:
+    example_pairs:
+      File_type: image/png
+      bodyFile: text/html
+      contentType: application/x-msi
+      mimeType: application/json
+related_attributes:
+  http_response_contentType: This captures a mimeType as well, but this field is only to be used in the context of an HTTP response.
+---
+field_name: file_path
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The full path (if possible) of the file. This field may contain partial paths and serves as the general placeholder for file/process path fields.
+example_usage:
+ - Endpoint:
+    example_keys:
+      - processPath
+      - applicationPath
+      - Path
+      - filePath
+      - FileName
+ - Operating System:
+    example_keys:
+      - ObjectName
+related_attributes:
+  file_basename: File base name will contain only the filename and extension (if applicable) without the path. File path will have the entire path including filename and extension.
+  baseImage: Base image will contain only the filename of the base image and extension (if applicable) without the path. File path will have the entire path including base images filename and extension.
+---
+field_name: file_size 
+population_method: mapping
+type: long
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Count of bytes taken up by the file.
+example_usage:
+ - General:
+    example_keys:
+      - file_size
+      - fileSize
+      - objectSize
+      - size
+related_attributes:
+  file_basename: File size should directly refer to the size in bytes of the file referenced in the file base name, not any other object in the log.
+  file_path: File size should directly refer to the size in bytes of the file referenced in the file path, not any other object in the log.
+---
+field_name: file_uid    
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The data source specific unique identifier for the file, often a GUID.
+example_usage:
+ - General:
+    example_keys:
+      - FileId
+      - Unique_id
+      - DocumentId
+      - objectId
+related_attributes:
+  File_basename: A file name may be unique, but file_uid should be an independent unique identifier generated by a data source so a file can be tracked within that data source.
+  processUid: A processUid refers to a unique identifier for tracking a process in the context of that process running. A file_uid may refer to a process as it exists on disk not in the context of the process being run.
+---
+field_name: flowState
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Value indicating the state (e.g. begin, end, or continue) of a network traffic flow as it enters or exits an interface.
+example_usage:
+ - Network:
+    example_pairs:
+      flowState: begin
+      State: new
+related_attributes:
+  action: Action describes an operation undertaken. In the context of network traffic, this is often a firewall deny, or allow. Flow state may reflect the outcome of an action, but it does not capture the action itself.
+---
+field_name: http_contentLength
+population_method: mapping
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The number of bytes of data in the body of the request.
+example_usage:
+ - Web:
+    example_keys:
+      - reqSize
+      - Content-length
+      - request-length
+related_attributes:
+  http_response_contentLength: Response length to be used for the size of the response
+---
+field_name: http_hostname
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Name of the host within an HTTP request
+example_usage:
+ - Web:
+    example_keys:
+      - Host
+      - Hostname
+      - urlDom
+related_attributes:
+  device_hostname: In the context of a web server, a device_hostname may be the same as http_hostname. Http_hostname should only be used for the host in a HTTP request log.
+---
+field_name: http_method
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Type of HTTP request being made (e.g. GET, POST)
+example_usage:
+ - Web/Proxy:
+    example_keys:
+      - method
+      - httpMethod
+      - Request_method
+      - reqMethod
+related_attributes:
+  action: In an HTTP request the method is a type of action, but the more specific field http_method should be used in these cases.
+---
+field_name: http_referer    
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Identifies the address of the webpage (i.e. the URI or IRI) which is linked to the resource being requested to determine the origin of the request.
+example_usage:
+ - Web/Proxy:
+    example_keys:
+      - Path
+      - Http_refer
+      - Referrer (spelled correctly)
+      - Referer (as spelled in RFC 1945)
+related_attributes:
+  http_url: The referer is the webpage which is linked to the URL. Referer is not always present in an HTTP request log.
+---
+field_name: http_response_contentLength
+population_method: mapping
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The number of bytes of data in the body of the response.
+example_usage:
+ - Web:
+    example_keys:
+      - respSize
+      - Content-length
+      - Response-length
+      - Sccontentlen
+      - bodySize
+related_attributes:
+  http_contentLength: Http_contentLength is to be used for the size of the request, not the response.
+---
+field_name: http_response_contentType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Two-part media type (MIME type/subtype) indicating the nature and format of data contained within an HTTP response.
+example_usage:
+ - Web/Proxy:
+    example_keys:
+      - Content_type
+      - mimeType
+      - headContent
+      - ResponseContentType
+related_attributes:
+  file_mimeType: File_mimeType should be used for log messages with activity relating to a file.
+---
+field_name: http_response_statusCode
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The numeric response code for an HTTP request
+example_usage:
+ - Web/Proxy:
+    example_pairs:
+      Target_status_Code: 200
+      Status: 404
+      Scstatus: 500
+      Httpstatus: 403
+      Status_Code: 451
+      errorCode: 400
+related_attributes:
+  http_response_statusText: Status text contains the human readable text of the status code (e.g. 404 Not Found)
+---
+field_name: http_response_statusText
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The response text for an HTTP request corresponding to an HTTP status code.
+example_usage:
+ - Web/Proxy:
+    example_pairs:
+      Target_status_text: Success
+      Status: Not Found
+      Scstatus: Server Error
+      Httpstatus: Forbidden
+      Status_text: Unavailable for Legal Reasons
+      errorCode: Bad Request
+related_attributes:
+  http_response_statusCode: Status text contains the human readable text of the status code (e.g. 404 Not Found)
+---
+field_name: http_url
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The Uniform Resource Locator (URL) of an HTTP resource (a web page).
+example_usage:
+ - Web/Proxy:
+    example_keys:
+      - Request_url
+      - Url
+      - Uri
+      - request_uri
+      - Dst_url
+related_attributes:
+  http_hostname: The HTTP hostname is an element of the URL. The full string comprising all the elements is to be captured into http_url.
+---
+field_name: http_userAgent
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Software agent that is acting on behalf of a user in an HTTP request.
+example_usage:
+ - Web/Proxy:
+    example_pairs:
+      User_agent: Mozilla/5.0 (iPad; U; CPU OS 3_2_1 like Mac OS X; en-us) AppleWebKit/531.21.10 (KHTML, like Gecko) Mobile/7B405
+      userAgent: Googlebot/2.1 (+http//www.google.com/bot.html)
+      Ua: CERN-LineMode/2.15 libwww/2.17b3
+      requestClientApplication: Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/87.0.4280.141 Safari/537.36
+related_attributes:
+  application: A user agent may contain information about the application making a web request within it, however the user agent string will often contain additional information, such as the client operating system, and will not always be specific enough to easily identify the application making the request.
+---
+field_name: ipProtocol
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The transport layer internet protocol used in the traffic that generated the log event. This should be the IP protocol keyword or the protocol number, such as ICMP or 1, TCP or 6, UDP or 17 as defined by the Internet Assigned Numbers Authority (IANA).
+example_usage:
+ - General:
+    example_keys:
+      - Prot
+      - Protnum
+      - Protname
+      - Protocol
+      - ipproto
+      - ipprotocol
+related_attributes:
+  application: An application can be inferred using the IP protocol and port number, for example TCP (6) and port 443 is likely to be HTTPS.
+  tcpProtocol: Application layer protocol used to establish the connection. TCP is the IP protocol.
+---
+field_name: logonType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The method of authentication or type of user session initiated.
+example_usage:
+ - Windows:
+    example_pairs:
+      LogonType: 10 (remote interactive)
+      LoginType: 5 (Service)
+ - Cloud:
+    example_pairs:
+      RecordTypeString: AzureActiveDirectoryStsLogon
+      Login_type: saml
+related_attributes:
+  description: In an authentication, the login type may be described in the event description as well as separately
+  action: Action may also describe the logon type (e.g. A user signed on interactively)
+---
+field_name: sessionId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ An ephemeral and at least semi-unique identifier of a connection between two systems. E.g. HTTP session, user logon session, TCP session identifiers
+example_usage:
+ - On-Prem:
+    example_pairs:
+      SessionId: 3564537
+      RADIUS.Acct-Session-Id: Grant78FD94DEFD7C-57C5CB27
+      TargetLogonId: 0x6160078c
+ - Cloud:
+    example_pairs:
+      session: i-0265ae3fc6bfb1ffc
+      SessionId: 3d02b723-b996-49ad-81a2-ecfc140c01f5
+related_attributes:
+  user_username: Session identifiers are likely to relate to a logon or user session and therefore the username associated to that session
+  logonType: Different types of logons will often have associated sessions identifiers
+---
+field_name: moduleType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Attribute of a file loaded by a process to extend functionality which identifies its file type or otherwise indicating how it is to behave.
+example_usage:
+ - General:
+    example_keys:
+      - startType 
+      - fileType
+related_attributes:
+  file_mimeType: ModuleType should be used to capture attributes of a certain functionality within the context of process execution. A moduleType may be captured as a file_mimeType if the file is being transmitted over a network, such as the internet.
+---
+field_name: severity
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The source specific severity level with no normalization.
+example_usage:
+ - General:
+    example_keys:
+      - Deviceseverity
+      - Severity
+      - Priority
+      - targetPriorityType
+      - SecurityLevel
+      - cylanceScore
+      - Information
+      - Critical
+      - Warning
+      - Error
+      - Alert
+related_attributes:
+  normalizedSeverity: The source specific severity can be converted to a normalized severity for easy comparison and to create generalized rules from diverse data sources.
+---
+field_name: normalizedSeverity
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Severity score on a scale of 0 to 10 with 0 being informational and 10 being critical. This is defined either explicitly per mapping or by a lookup to normalize a vendor specific severity level. Certain normalized threat rules will use normalizedSeverity to pass a dynamic severity into the signal. normalizedSeverity is an enforced output value field, this means that the output value must be an integer between 0 and 10.
+example_usage:
+ - General:
+    example_keys:
+     - severity (with lookup or as a constant)
+related_attributes:
+  Severity: Severity is to be used for the vendor specific severity values. These may be translated to normalizedSeverity by using a lookup.
+enforced_outputs:
+  0: The lowest severity, informational.
+  1:
+  2:
+  3:
+  4:
+  5:
+  6:
+  7:
+  8:
+  9:
+  10: The highest severity, critical.
+---
+field_name: normalizedAction
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Complementary to the Action field, this field describes the initiation of an activity in a common way across records. normalizedAction is meant to describe the attempt of an action, using the success boolean as a modifier indicating whether or not the action was successful. Further, normalizedAction should be paired with normalizedResource to indicate where or upon what the initiated action was attempted against.
+example_usage:
+ - General:
+    example_keys:
+     - action (with lookup or as a constant)
+related_attributes:
+  action: Action is to be used for the vendor specific action from the original log message or defined as a constant based on what the vendor defines as the action being undertaken within the log.
+  normalizedResource: The normalized resource that the action is being attempted against.
+  normalizedCause: The normalized cause that describes the reason behind the result of the action performed if applicable.
+  success: The boolean result of the action attempted.
+enforced_outputs:
+        allow: Use for actions synonymous with ‘allow’. Such as in an event describing the attempt, successful or not, to permit an object or the occurrence of an activity. Common to actions pertaining to network traffic.
+        abort: Use for actions synonymous with ‘abort’. Such as in an event describing the attempt, successful or not, of an interruption of an ongoing task.
+        access: Use for actions synonymous with access. Such as in an event describing the attempt, successful or not, to open a file. Not to be confused with 'inspect,' which denotes access for the purpose of further examining a resource.
+        deny: Use for actions synonymous with ‘deny’. Such as in an event describing the attempt, successful or not, to reject an object or the occurrence of an activity. Common to actions pertaining to network traffic.
+        bypass: Use for actions synonymous with 'bypass'. Such as in an event describing the attempt, successful or not, of the circumvention of a normal process for something. E.g. Network traffic not being subject to IDS/IPS rules. Common to actions directed at network traffic.
+        change: Use for actions synonymous with 'change'. Such as in an event describing the attempt, successful or not, to modify a resource.
+        clean: Use for actions synonymous with 'clean'. Such as in an event describing the attempt, successful or not, of the sanitization of a resource. Common in actions pertaining to anti-malware.
+        create: Use for actions synonymous with 'create'. Such as in an event describing the attempt, successful or not, to create a resource.
+        decrypt: Use for actions synonymous with 'decrypt'. Such as in an event describing the attempt, successful or not, of the decryption of a resource
+        delete: Use for actions synonymous with 'delete'. Such as in an event describing the attempt, successful or not, to create a resource.
+        disable: Use for actions synonymous with 'disable'. Such as in an event describing the attempt, successful or not, to render a resource inactive and/or unable. Common to actions pertaining to identity and access management.
+        domainLogon: Use for authentication activity related to accessing domain resources. Such as in an event describing the attempt, successful or not, to request a Kerberos TGT or access a network share.
+        enable: Use for actions synonymous with 'enable'. Such as in an event describing the attempt, successful or not, to render a resource active and/or able. Common to actions pertaining to identity and access management.
+        execute: Use for actions synonymous with 'execute'. Such as in an event describing the attempt, successful or not, to initiate the performance of a task.
+        ignore: Use for actions synonymous with 'ignore'. Such as in an event describing the attempt, successful or not, to disregard a resource or the occurrence of an activity.
+        inspect: Use for actions synonymous with 'inspect'. Such as in an event describing the attempt, successful or not, to submit a resource to further scrutiny.
+        install: Use for actions synonymous with 'install'. Such as in an event describing the attempt, successful or not, of the installation of a piece of software or hardware.
+        load: Use for actions synonymous with 'load'. Such as in an event describing the attempt, successful or not, to initialize a DLL file in process memory.
+        lock: Use for actions synonymous with 'lock'. Such as in an event describing the attempt, successful or not, to make a resource secure or inaccessible. Common to actions pertaining to identity and access management.
+        logoff: Use for actions synonymous with 'logoff'. Such as in an event describing the attempt, successful or not, of a computer, service, or user account logging off.
+        logon: Use for actions synonymous with 'logon'. Such as in an event describing the attempt, successful or not, of a computer, service, or user account logging in to a specific machine.
+        quarantine: Use for actions synonymous with 'quarantine'. Such as in an event describing the attempt, successful or not, of isolating a resource. Common in actions pertaining to anti-malware.
+        receive: Use for actions synonymous with 'receive'. Such as in an event describing the attempt, successful or not, to accept the arrival of a resource. Common to actions pertaining to e-mail.
+        reset: Use for actions synonymous with 'reset'. Such as in an event describing the attempt, successful or not, to discard the current state of a resource. Common to actions pertaining to network network traffic and identity access management depending on context.
+        restore: Use for actions synonymous with 'restore'. Such as in an event describing the attempt, successful or not, to re-establish the prior state of a resource. Common to actions pertaining to backups.
+        scan: Use for actions synonymous with 'scan'. Such as in an event describing the attempt, successful or not, to initiate a scan of a resource. Common to actions pertaining to anti-malware.
+        send: Use for actions synonymous with 'send'. Such as in an event describing the attempt, successful or not, to dispatch a resource. Common to actions pertaining to e-mail.
+        start: Use for actions synonymous with 'start'. Such as in an event describing the attempt, successful or not, of the initiation of an activity.
+        stop: Use for actions synonymous with 'stop'. Such as in an event describing the attempt, successful or not, of the cessation of an activity.
+        uninstall: Use for actions synonymous with 'uninstall'. Such as in an event describing the attempt, successful or not, of the removal of a piece of software or hardware.
+---
+field_name: normalizedResource
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Complementary to Resource, this field describes the resource being acted upon or otherwise referenced within a record in a common way across records. Intended to be used to provide further normalized context to a record, particularly in tandem with normalizedAction.
+example_usage:
+ - General:
+    example_keys:
+     - resource (with lookup or as a constant)
+related_attributes:
+  resource: Resource is to used for the vendor specific resource from the original log message or defined as a constant based on what the vendor defines as the resource being acted against or referenced in the log.
+  normalizedAction: The normalized action being undertaken against the resource.
+  changeTarget: The change target may be the resource that is being acted upon in an event which describes the modification of a resource or object.
+enforced_outputs:
+        network: Use where the resource being acted upon or referenced in a record is or pertains to network traffic.
+        e-mail: Use where the resource being acted upon or referenced in a record pertains to e-mail or e-mail delivery.
+        malware: Use where the resource being acted upon or referenced in a record pertains to malware itself or the prevention, detection, or removal of malware.
+        service: Use where the resource being acted upon or referenced in a record pertains to a service.
+        application: Use where the resource being acted upon or referenced in a record pertains to an application.
+        process: Use where the resource being acted upon or referenced in a record pertains to a process
+        operating system: Use where the resource being acted upon or referenced in a record pertains to an operating system component.
+        account: Use where the resource being acted upon or referenced in a record pertains to an account.
+        group: Use where the resource being acted upon or referenced in a record pertains to a group. E.g. organizational unit, security group, user group, computer group, access control list etc.
+        role: Use where the resource being acted upon or referenced in a record pertains to a role. Common to cloud computing.
+        file: Use where the resource being acted upon or referenced in a record pertains to a file.
+        directory: Use where the resource being acted upon or referenced in a record pertains to a directory or similar hierarchical organizational unit.
+        instance: Use where the resource being acted upon or referenced in a record pertains to a specific machine instance, typically virtual. Common to cloud computing.
+        bucket: Use where the resource being acted upon or referenced in a record pertains to a specific bucket. Common to cloud computing.
+        database: Use where the resource being acted upon or referenced in a record pertains to a database.
+        backup: Use where the resource being acted upon or referenced in a record pertains to a backup.
+        scheduled task: Use where the resource being acted upon or referenced in a record pertains to a scheduled task or analogous functionality.
+        key: Use where the resource being acted upon or referenced in a record pertains to a cryptographic key.
+        registry: Use where the resource being acted upon or referenced in a record is part of the Windows Registry, including hives, keys, and values.
+        library: Use where the resource being acted upon or referenced in a record is a shared library, including DLL, .so, and .dylib files.
+---
+field_name: normalizedCause
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Complementary to Cause, this field describes the reason for any particular outcome in a record in a common way.
+example_usage:
+ - General:
+    example_keys:
+     - cause (with lookup or as a constant)
+related_attributes:
+  cause: Cause is used for the vednor specific cause from the original log message or defined as a constant based on what the vendor defines as the cause of the result stemming from an action being attempted.
+  normalizedAction: The normalized action the result of which cause describes the outcome.
+enforced_outputs:
+        incorrect password: For a record describing an authentication failure where the cause of the failure was an incorrect password.
+        incorrect username: For a record describing an authentication failure where the cause of the failure was an incorrect username.
+        incorrect credentials: For a record describing an authentication failure where the cause of the failure is listed as either a username or password failure and it is not specified which is incorrect.
+        failed challenge: For a record describing an authentication failure where the cause of the failure was a failed multi-factor authentication challenge or other secondary authentication challenge, such as a security question.
+        system error: For a record describing a failed operation where the cause of the failure was a system error.
+        allow list: For a record describing the successful outcome of an operation based on the presence of an object on an allow list. Such as an Allow ACL.
+        deny list: For a record describing the failed outcome of an operation based on the presence of an object on a deny list. Such as a Deny ACL.
+---
+field_name: cause
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Complementary to Cause, this field describes the reason for any particular outcome in a record in a common way.
+example_usage:
+ - General:
+    example_keys:
+     - cause
+     - resultReason
+     - description
+     - message
+related_attributes:
+  action: The action the result of which cause describes the outcome.
+  description: Description will elaborate on what occurs in a given event, which may contain information on the outcome of an event, it may relate to cause by elaborating on why an action may have failed or succeeded.
+---
+field_name: packetsIn
+population_method: mapping
+type: long
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The count of packets received in a network connection.
+example_usage:
+ - Network:
+    example_keys:
+      - packetsStod
+      - Init_packets
+      - Rcvdpkt
+      - In_packets
+      - Packets_recieved
+      - Rpkt
+related_attributes:
+  bytesIn: BytesIn is the amount of data received in bytes. A packet contains a payload of data which may vary in size, often between 1,000 and 1,500 bytes.
+---
+field_name: packetsOut
+population_method: mapping
+type: long
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The count of packets sent in a network connection.
+example_usage:
+ - Network:
+    example_keys:
+      - Resp_packets
+      - Sentpkt
+      - Server_packet
+      - Packets_sent
+      - spkt
+related_attributes:
+  bytesOut: BytesOut is the amount of data sent in bytes. A packet contains a payload of data which may vary in size, often between 1,000 and 1,500 bytes.
+---
+field_name: parentBaseImage
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name of an executable process which has spawned a child process. Often found in process auditing and malware detection events.
+example_usage:
+ - Audit:
+    example_keys:
+      - cmd.exe
+      - powershell.exe
+      - ssh
+      - iTerm2
+ - Endpoint:
+    example_keys:
+      - qweelknlkoiweube.exe (a suspicious process)
+related_attributes:
+  application: A process image may be an application independently or a component of an application, but parentBaseImage is reserved for specific executable processes (e.g sysmon.exe), where application is a broader descriptor.
+  threat_name: A threat name usually describes a specific signature of attack or malware (e.g, conficker.c). A base image may serve as the delivery mechanism for a threat, but the actual threat name would most likely be distinct from the base image.
+  baseImage: Base image is the child process of the parent which spawned it.
+  grandparentBaseImage: Grandparent base image is the process which spawned the parent process.
+---
+field_name: grandparentBaseImage
+population_method: mapping
+type: string
+entity_type:
+enrichment_attribute: false
+description: |-
+ The name of an executable process which spawned the parent process. Often found in process auditing and malware detection events.
+example_usage:
+ - Audit:
+    example_keys:
+      - cmd.exe
+      - powershell.exe
+      - ssh
+      - iTerm2
+ - Endpoint:
+    example_keys:
+      - qweelknlkoiweube.exe (a suspicious process)
+related_attributes:
+  parentBaseImage: Parent base image is the child process of the grandparent which spawned it.
+  baseImage: Base image is the grandchild process of the grandparent.
+---
+field_name: parentCommandLine
+population_method: mapping
+type: string    
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The instruction or set of instructions inputted into a text interface such as the command prompt (cmd.exe) or PowerShell in Windows, or terminal on Unix based systems associated with a parent process.
+example_usage:
+ - Windows (cmd, PowerShell):
+    example_values:
+      - ipconfig /all
+      - netsh interface ip add dns "connection name" 208.67.222.222
+      - Add-ADGroupMember -Identity SvcAccPSOGroup -Members SQL01,SQL02
+ - Terminal:
+    example_values:
+      - ssh testuser@10.0.0.55
+      - chmod u+r,g+x filename
+related_attributes:
+  commandLine: In some instances another process may have an associated command line that is used to create child processes and command lines. This would be associated with a parentBaseImage.
+  grandparentCommandLine: The command line associated with the grandparent process that spawned the parent process.
+  parentBaseImage: Often parentCommandLine will contain the process executing the instructions as well as arguments, the complete string should be captured into parentCommandLine.
+---
+field_name: grandparentCommandLine
+population_method: mapping
+type: string
+entity_type:
+enrichment_attribute: false
+description: |-
+ The instruction or set of instructions inputted into a text interface such as the command prompt (cmd.exe) or PowerShell in Windows, or terminal on Unix based systems associated with a grandparent process.
+example_usage:
+ - Windows (cmd, PowerShell):
+    example_values:
+      - ipconfig /all
+      - netsh interface ip add dns "connection name" 208.67.222.222
+      - Add-ADGroupMember -Identity SvcAccPSOGroup -Members SQL01,SQL02
+ - Terminal:
+    example_values:
+      - ssh testuser@10.0.0.55
+      - chmod u+r,g+x filename
+related_attributes:
+  parentCommandLine: The command line of the parent process, which is a child of the grandparent process.
+  grandparentBaseImage: Often grandparentCommandLine will contain the process executing the instructions as well as arguments, the complete string should be captured into grandparentCommandLine.
+---
+field_name: parentPid
+population_method: mapping
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The process id of the program that initiated a process (typically the parentBaseImage).
+example_usage:
+ - Endpoint:
+    example_keys:
+      - parentPid
+      - Process_id
+      - Parent.pid
+      - parentProcessId
+related_attributes:
+  pid: Pid (process id) would be used in the absence of a logged parent process spawning it.
+  grandparentPid: Grandparent PID (process ID) is the process that spawned the parent process.
+---
+field_name: grandparentPid
+population_method: mapping
+type: int
+entity_type:
+enrichment_attribute: false
+description: |-
+ The process id of the program that initiated the parent process (typically the grandparentBaseImage).
+example_usage:
+ - Endpoint:
+    example_keys:
+      - grandparentPid
+      - GrandParent.pid
+      - grandparentProcessId
+related_attributes:
+  parentPid: Parent PID (process ID) is the child of the grandparent process.
+  pid: Pid (process id) is the grandchild of the grandparent process.
+---
+field_name: pid
+population_method: mapping
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The process id of a process (typically the baseImage).
+example_usage:
+ - Endpoint:
+    example_keys:
+      - pid
+      - Process_id
+      - ProcessId
+related_attributes:
+  parentPid: Parent PID (process ID) would be present in cases where the process was created by another.
+  grandparentPid: Grandparent PID (process ID) would be present in cases where the parent process was created by another.
+---
+field_name: processUid
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A data source specific unique identifier for a process, often a GUID.
+example_usage:
+ - General:
+    example_keys:
+      - Process_guid
+      - ProcessUid
+related_attributes:
+  pid: Process IDs are most often not unique and are often reused. A process UID should be a unique identifier.
+---
+field_name: repository
+population_method: mapping
+type: string
+entity_type: file
+enrichment_attribute: False
+description: |-
+ The name or path of a centrally managed object storage location, such as a Git repository, a container repository, or similar concepts.
+example_usage:
+  - Git:
+    example_keys:
+      - repo
+      - repository
+related_attributes:
+  resource: Depending on the context of the log, the resource being acted upon or referenced may be a repository as well
+  resourceType: Repository may be the type of a resource referenced in a log
+  normalizedResource: Repository is a normalizedResource, this is used when the resource referenced in the log is a repository and is central to classifying the log message as a whole
+---
+field_name: resource
+population_method: mapping
+type: string
+entity_type: resource
+enrichment_attribute: false
+description: |-
+ Generalized field to capture an object referenced within a log that does not have a more specific field currently specified in the mapping schema. (e.g. a file is a resource, however file_basename and file_path both exist to capture this value)
+example_usage:
+ - General:
+    example_keys:
+      - ARN
+      - resourceTitle
+      - RESOURCE_NAME
+      - SessionName
+      - ShareName
+related_attributes:
+ resourceType: Describes at a higher level
+ normalizedResource: If the resource captured maps to the enumerated values in normalizedResource so it can be more broadly correlated and classified.
+ Note: As a general usage field, resource can be associated with any other field which is more specific in purpose. More specific fields should always be used if there is one available for capturing data.
+---
+field_name: resourceType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Generalized field to help describe the nature of a resource. Used when a resource exists for which there is no more specific field specified for that type of resource. (e.g. a file is a type of resource, file_basename exists to capture the name of the file and describes the type)
+example_usage:
+ - General:
+    example_keys:
+      - message.data.resource.type  
+related_attributes:
+ resource: The associated specific resource which the resource type describes
+ normalizedResource: The normalized resource provides an enumerated list of common resource types. This may overlap, and resourceType may be used as a lookup to map into normalizedResource.
+ Note: As a general usage field, resourceType may often be redundant if a more strongly typed field exists. A file could be the type of resource, but file_basename for example describes the file resource as a file type.
+---
+field_name: sourceUid
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A UID that is defined by the record itself. Each record is assigned a UID during mapping, but this is the unique identifier field that may exist within an originating record.
+example_usage:
+ - General:
+    example_keys:
+      - EventRecordID
+      - LOG_ID
+      - alertId
+      - Event_id
+      - id
+related_attributes:
+  uid(not mappable): Unique identifier assigned by the system to each record.
+---
+field_name: srcDevice_hostname
+population_method: mapping
+type: string
+entity_type: hostname
+enrichment_attribute: false
+description: |-
+ The name of the host which network traffic originated from.
+example_usage:
+ - Network:
+    example_keys:
+      - privateDnsName
+      - Src_hostname
+      - Dvchost
+      - Ghost
+      - Client.device
+      - ClientName
+      - Host
+related_attributes:
+  device_hostname: Device hostname is the host generating the log message. In the example of a firewall recording traffic originating from itself, the device hostname would be the same as the source hostname.
+---
+field_name: srcDevice_ip
+population_method: mapping
+type: string
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The IP address of the host which network traffic originated from.
+example_usage:
+ - Network:
+    example_keys:
+      - src
+      - Src_ip
+      - Srcip
+      - client_ip
+      - Dvcip
+      - ipAddressv4
+      - sourceIPAddress
+related_attributes:
+  device_ip: Device IP is the host generating the log message. In the example of a firewall recording traffic originating from itself, the device IP would be the same as the source IP.
+---
+field_name: srcDevice_mac
+population_method: mapping
+type: string
+entity_type: mac
+enrichment_attribute: false
+description: |-
+ The media access control (MAC) address of the host which network traffic originated from.
+example_usage:
+ - Network:
+    example_keys:
+      - srcmac
+      - Destinationmac
+      - srcmac
+      - smac
+      - Mac
+      - Macaddress
+      - dvcmac
+ - Endpoint:
+    example_keys:
+      - srcmac
+      - src_mac
+      - source_mac
+related_attributes:
+  device_mac: Device MAC is for the host generating the log message. In the example of a firewall recording traffic originating from itself, the device MAC would be the same as the source MAC.
+---
+field_name: srcDevice_natip
+population_method: mapping
+type: string
+entity_type: ip
+enrichment_attribute: true
+description: |-
+ The external network address translated (NAT) IP address which network traffic originated from.
+example_usage:
+ - Network:
+    example_keys:
+      - srcnatIp
+      - srctnatip
+      - Nat_source_ip
+      - NATSourceIP
+      - SourceTranslatedAddress
+ - Proxy:
+    example_keys:
+      - src
+      - src_ip
+      - sourceIP
+ - Endpoint:
+    example_keys:
+      - originnatip
+      - origin_nat_ip
+      - origin_nat_ip
+related_attributes:
+  device_natIp: Device NAT IP is for the network address translated IP of the host generating the log message. In the example of a firewall recording traffic originating from itself, the device NAT IP would be the same as the source NAT IP.
+---
+field_name: srcDevice_osName
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The operating system running on the host which network traffic originated from.
+example_usage:
+ - Network:
+    example_keys:
+      - srcOs
+      - sourceOs
+      - sourcedeviceOs
+ - Endpoint:
+    example_keys:
+      - originos
+      - origin_os
+      - origin_os
+related_attributes:
+  device_osName: Device OS name is the operating system of the host generating the log message. In the example of a firewall recording traffic originating from itself, the device OS would be the same as the source OS.
+---
+field_name: srcDevice_uniqueId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The unique ID of the host which network traffic originated from. This field is frequently used by cloud providers to identify instances.
+example_usage:
+ - Network:
+    example_keys:
+      - SrcId
+      - Sourceuid
+      - SrchostId
+      - resource.instanceDetails.instanceId
+      - srcids.instance
+ - Endpoint:
+    example_keys:
+      - originUniqueid
+      - origin_uniqueid
+related_attributes:
+  device_uniqueId: Device unique ID is of the host generating the log message. In the example of a firewall recording traffic originating from itself, the device unique ID would be the same as the source unique ID.
+---
+field_name: srcDevice_type
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The instance, compute, or machine type which network traffic originated from. Typically used in cloud environments to describe computing specifications.
+example_usage:
+ - Cloud:
+    example_keys:
+      - srcInstanceType
+    example_values:
+      - m4.4xlarge
+related_attributes:
+  srcDevice_hostname: The name of the host the type describes the computing attributes of
+  srcDevice_ip: The IP address of the host the type describes the computing attributes of
+  srcDevice_mac: The MAC address of the host the type describes the computing attributes of
+---
+field_name: srcDevice_image
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The snapshot of the state of a device or similar which can be used to deploy or reproduce a system for which traffic is originating. E.g. A VM image, a container image. 
+example_usage:
+ - Cloud:
+    example_keys:
+      - imageId
+    example_values:
+      - ami-09df8cd00t05dce77
+related_attributes:
+  resource: The resource being acted upon may be a device image
+  srcDevice_type: The source device type potentially describes the compute attributes of an image
+  srcDevice_hostname: The name of the source host created from the image
+  srcDevice_ip: The IP address of the source host created from the image
+  srcDevice_mac: The MAC address of the source host created from the image
+---
+field_name: srcPort
+population_method: mapping
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The port number which the network traffic originated from.
+example_usage:
+ - General:
+    example_keys:
+      - src_port
+      - Remote_port
+      - sport
+      - source_port
+      - spt
+      - localPortDetails.port
+      - id.orig_p
+related_attributes:
+  dstPort: The port number to which the network traffic from the source is destined.
+---
+field_name: success
+population_method: mapping
+type: boolean
+entity_type: 
+enrichment_attribute: false
+description: |-
+ True or false showing whether or not an action or event recorded in a log was successful. This field is either defined as a constant or based on a lookup in a mapping.
+example_usage:
+ - Network:
+    example_values:
+      - Network Traffic Allow (success=true)
+      - Network Traffic Block (success=false)
+ - Endpoint:
+    example_values:
+      - Antivirus Cleaned File (success=true)
+      - Antivirus Failed to Clean File (success=false)
+ - Authentication:
+    example_values:
+      - User logged on (success=true)
+      - User logon failure (success=false)
+ - Audit:
+    example_values:
+      - User Added to Administrators Group (success=true)
+      - User Group Add Denied (success=false)
+related_attributes:
+  action: Success is often based on the outcome of the recorded action.
+  metadata_deviceEventId: The device event ID will often indicate the success or failure of an event, a logon failure for example.
+---
+field_name: mfa
+population_method: mapping
+type: boolean
+entity_type: 
+enrichment_attribute: false
+description: |-
+ True or false showing whether or not an authentication event was performed with multi-factor authentication.
+example_usage:
+ - Authentication:
+    example_pairs:
+      - mfaAuthenticated: true
+      - mfaAuthenticated: false
+related_attributes:
+  success: Indicates whether an authentication with or without MFA was successful.
+---
+field_name: tcpProtocol
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Application layer protocol used to establish the connection as defined by the Internet protocol Suite (TCP/IP).
+example_usage:
+ - Network:
+    example_values:
+      - FTP
+      - DHCP
+      - HTTP
+      - HTTPS
+      - NTP
+      - SMTP
+      - Telnet
+      - SSH
+related_attributes:
+  ipProtocol: Transport layer IP protocol, if the ipProtocol is TCP it may be combined with destination port to infer the tcpProtocol (TCP/443 is likely to be HTTPS).
+  application: Application may also refer to the tcpProtocol depending on the context, or an application may make use of the tcpProtocol for communication.
+---
+field_name: threat_category
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The type of threat determined by a service based on the signature or threat name.
+example_usage:
+ - Endpoint:
+    example_keys:
+      - threatClassification
+      - threatType
+      - threatCategory
+      - detectionType
+      - attack_type
+      - detectionClass
+related_attributes:
+  threat_name: Name of the threat that belongs to the category
+---
+field_name: threat_identifier
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The identifier or indicator specific to a threat (not a vulnerability). Generally speaking this should be populated with an indicator value.
+example_usage:
+ - Endpoint:
+    example_keys:
+      - incidentId
+      - threatId
+      - IOC
+      - appRep
+      - alertId
+      - IndicatorId
+related_attributes:
+  threat_name: The name of the threat (often a signature) for which threat_identifier is assigned.
+---
+field_name: threat_name
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Name of a specific threat (not a vulnerability), such as malware or an exploit. Often a threat signature.
+example_usage:
+ - Endpoint:
+    example_keys:
+      - Threat
+      - Signature
+      - threatInfo.summary
+      - Detection
+      - DetectName
+      - Attack
+      - event_rule_name
+related_attributes:
+  threat_identifier: ID of a threat given to the named threat.
+  threat_category: The higher level classification to which a threat name might belong to, such as worm, potentially unwanted software, or virus.
+---
+field_name: threat_referenceUrl
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ An external URL that can provide more information about the threat. This should NOT be the URL that represents an observed HTTP request.
+example_usage:
+ - Endpoint:
+    example_keys:
+      - Url
+      - breachUrl
+      - threatUrl
+      - IncidentLink
+      - signature_info
+ - Cloud:
+    example_keys:
+      - AlertLinkHref
+      - EventDeepLink
+related_attributes:
+  http_url: A URL may be a threat itself. The threat reference URL is intended to provide information on a threat, and should be considered safe to navigate to.
+---
+field_name: threat_ruleType
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ This field should be used with logs that indicate detection of a security event has already occurred. These logs are produced by a security product's own detection capabilities like signatures or rule sets. 
+ As an example, if a log has a severity, risk, or impact in the message, it should have threat_ruleType included and populated in its mapper. 
+ The logs using this field will all be a form of pass through content. Messages that do not include security event detection must leave this field out of the mapper or leave it blank.
+related_attributes:
+  threat_signalName: Used in conjunction with rule type, signal name is used to help populate a rule name for rules intended to pass through alerts from a diverse array of security products.
+---
+field_name: threat_signalName
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ This field is used in conjunction with normalized rules designed to directly pass through security alerts from other security products, appliances, and services. Those rules will use the text populated in this field as an element of the signal name, allowing different signal names for different products while retaining the normalized rule logic.
+related_attributes:
+  threat_ruleType: Used in conjunction with signal name, rule type is intended to provide normalized classification for the creation of rules which pass through alerts from a diverse array of security products.
+---
+field_name: threat_signalSummary
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ This field is used in conjunction with normalized rules. Those rules will use the text populated in this field as an element of the signal summary, allowing different signal summaries for different products while retaining the normalized rule logic.
+related_attributes:
+  threat_ruleType: Used in conjunction with signal name, rule type is intended to provide normalized classification for the creation of rules which pass through alerts from a diverse array of security products.
+---
+field_name: timestamp
+population_method: mapping
+type: long
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The timestamp of the event stored as milliseconds since epoch. Time can be directly mapped if the log contains epoch time, however other time formats can be mapped if the format is provided. If no timestamp is defined in the mapping, ingest time will be used by default.
+example_usage:
+ - General:
+    example_pairs:
+      Query_timestamp: "2020-09-03T19:54:35Z"
+related_attributes:
+  receiptTime: Receipt time will be used as the timestamp if there is no timestamp otherwise mapped.
+---
+field_name: user_username
+population_method: mapping
+type: string
+entity_type: user
+enrichment_attribute: false
+description: |-
+ User performing an action. Such as an administrator disabling another user account.
+example_usage:
+ - General:
+    example_keys:
+      - suser
+      - subjectUsername
+      - account
+      - accountName
+      - user
+      - username
+      - sourceUser
+      - callerUsername
+related_attributes:
+  targetUser_username: The user which is impacted by the activity undertaken by the user_username. Such as the name of a user account being created, being disabled, or other administrative actions being performed upon it.
+  user_authDomain: The authentication domain (such as an active directory domain) to which the user belongs.
+  user_userId: Unique identifier associated with the user
+  user_role: The role associated with the user. Such as in CloudTrail logs as an assumed role.
+  user_email: E-mail address associated with the user
+  user_username_role: The role extracted from the username such as an AWS ARN.
+  user_username_raw: The raw username as it appears in the log before any enrichments are applied.
+---
+field_name: user_authDomain
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The authentication domain associated with an acting user. Such as an Active Directory domain of a user logging in or is performing an action.
+example_usage:
+ - General:
+    example_keys:
+      - domain
+      - callerDomain
+      - subjectDomain
+      - user_domain
+related_attributes:
+  user_username: The acting user which belongs to the authenticating domain.
+  targetUser_authDomain: The authentication domain which a targetUser belongs to.
+---
+field_name: user_role
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A privileged persona which is assumed by an acting user. Such as in CloudTrail logs as well as similar cases where a user is recorded taking on a different role for specific privileged activity.
+example_usage:
+ - Cloud:
+    example_keys:
+      - assumed_role
+      - role
+related_attributes:
+  user_username: The user which is assuming the role
+  targetUser_role: The role of a user which is subject to activity performed by the user who has assumed a role.
+---
+field_name: user_userId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The semi-unique identifier associated with an acting user account.
+example_usage:
+ - General:
+    example_keys:
+      - sid
+      - user.id
+      - user_id
+      - createdBy.id
+      - id
+related_attributes:
+  user_username: The username to which the semi-unique ID belongs
+  targetUser_userId: The semi-unique identifier of the user account subject to activity performed by the user with the associated semi-unique identifier.
+---
+field_name: user_email
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ E-Mail address associated with the acting user.
+example_usage:
+ - Email:
+    example_keys:
+      - SubjectEmail
+      - email
+      - userEmail
+related_attributes:
+  user_username: The username associated with the email address
+  targetUser_email: The e-mail address associated with the user account which is subject to an activity undertaken by the acting user. Such as the e-mail of a new user account.
+---
+field_name: user_phoneNumber
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Telephone number associated with the acting user.
+example_usage:
+ - LDAP:
+    example_keys:
+      - user_phone
+      - mobile_number
+      - cellPhone
+related_attributes:
+  user_username: The username associated with the telephone number
+  targetUser_phoneNumber: The phone number associated with the user account which is subject to an activity undertaken by the acting user. Such as the phone number associated with a new user account.
+---
+field_name: targetUser_phoneNumber
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Telephone number associated with the impacted or acted upon user.
+example_usage:
+ - LDAP:
+    example_keys:
+      - user_phone
+      - mobile_number
+      - cellPhone
+related_attributes:
+  user_username: The username associated with the telephone number
+  user_phoneNumber: The phone number associated with the user account which is subject to an activity undertaken by the acting user. Such as the phone number associated with a new user account.
+---
+field_name: targetUser_username
+population_method: mapping
+type: string
+entity_type: user 
+enrichment_attribute: false
+description: |-
+ User an action is performed on or is otherwise impacted by an action taken by another user. Such as a user whose account is disabled by an administrator.
+example_usage:
+ - General:
+    example_keys:
+      - duser
+      - targetUsername
+      - account
+      - accountName
+      - user
+      - username
+      - destinationUser
+related_attributes:
+  user_username: The user performing an action on the targetUser_username. Such as the username of the administrator creating a new user, disabling a user, or performing other administrative actions.
+  targetUser_authdomain: The authentication domain (such as an active directory domain) to which the target user belongs.
+  targetUser_userId: Unique identifier associated with the target user
+  targetUser_role: The role associated with the target user. Such as in CloudTrail logs as an assumed role.
+  targetUser_email: E-mail address associated with the target user
+  targeruser_username_role: The role extracted from the target username, such as an AWS ARN).
+  targetuser_username_raw: The raw username as it appears in the log before any enrichments are applied.
+---
+field_name: targetUser_authDomain
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The authentication domain of a user which is subject to or is otherwise impacted by activity undertaken by another user. Such as the Active Directory domain to which a new user account being created belongs.
+example_usage:
+ - General:
+    example_keys:
+      - domain
+      - targetDomain
+      - targetuserDomain
+      - user_domain
+related_attributes:
+  targetUser_username: The user which belongs to the domain
+  user_authDomain: The authentication domain which the user performing the action which the target user is subject to. Such as the domain of an administrator creating a user account.
+---
+field_name: targetUser_role
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A privileged persona assumed by a user which is subject to activity undertaken by another user. Such as in CloudTrail logs as well as similar cases where a user is recorded taking on a different role for specific privileged activity.
+example_usage:
+ - Cloud:
+    example_keys:
+      - role
+      - assumed_role
+related_attributes:
+  targetUser_username: The user account which assumed the role
+  user_role: The role of the user account which has undertaken an action on the user which has assumed a role.
+---
+field_name: targetUser_userId
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The semi-unique identifier associated with a user account which is subject to activity undertaken by another user account.
+example_usage:
+ - General:
+    example_keys:
+      - sid
+      - targetSid
+      - targetUserId
+related_attributes:
+  targetUser_username: The username associated with the user ID
+  user_userId: The userId of the user account which has undertaken an action on the user with the associated userId.
+---
+field_name: targetUser_email
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ E-Mail address associated with the user which is subject to activity undertaken by another account. Such as an E-Mail address which was created for a new user account.
+example_usage:
+ Email:
+    example_keys:
+      - targetEmail
+      - email
+      - userEmail
+related_attributes:
+  targetUser_username: The username associated with the email address
+  user_email: The e-mail associated with the user account which has undertaken an action on the user with the associated email.
+---
+field_name: vuln_bugtraq
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Bugtraq identifier assigned by SecurityFocus. BugTraq is a full disclosure moderated mailing list for the detailed discussion and announcement of computer security vulnerabilities.
+example_usage:
+ - Vulnerability Scanners:
+    example_pairs:
+      Bugtraq_id: 19941209
+    example_keys:
+      - bugtraq
+related_attributes:
+  vuln_name: The name of a vulnerability for which Bugtraq has assigned an identifier.
+---
+field_name: vuln_cert
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Numeric identifier for a vulnerability assigned by the United States Computer Emergency Readiness Team Coordination Center (US CERT/CC).
+example_usage:
+ - Vulnerability Scanner:
+    example_keys:
+      - CertccId
+      - VU#
+      - CertID
+related_attributes:
+  vuln_name: The name of a vulnerability for which there is a US CERT CC vulnerability number.
+---
+field_name: vuln_cve
+population_method: mapping
+type: string
+description: |-
+ Common Vulnerabilities and Exposures identifier for the vulnerability. Follows the format CVE-<year>-<number>
+example_usage:
+ - Vulnerability Scanner:
+    example_pairs:
+      industry_reference : CVE-2021-0217
+    example_keys:
+      - CVE
+      - Exploit
+related_attributes:
+  vuln_name: The name of a vulnerability for which there is a CVE assigned.
+---
+field_name: vuln_cvss 
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Common Vulnerability Scoring System (CVSS) score designed to help responders to prioritize their response and resources to a vulnerability.
+example_usage:
+ - Vulnerability Scanner:
+    example_pairs:
+      Cvss_base: 2.0
+      Cvss3_base: 2.6
+      Cvss_impact_score: 5.5
+related_attributes:
+  vuln_name: Name of a vulnerability which has been given a CVSS score.
+---
+field_name: vuln_name
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Name that briefly summarizes the nature of a vulnerability. 
+example_usage:
+ - Vulnerability Scanner:
+    example_keys:
+      Title
+      Plugin.name
+      Vulnerability
+      VulnName
+related_attributes:
+  threat_name: A vulnerability may be exploited by a threat, but is not by itself a threat.
+  vuln_reference: Additional information on a vulnerability, often in the form of a link.
+---
+field_name: vuln_reference
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Additional information on a vulnerability in the form of a link, a specific vendor ID (e.g. MS14-068), or further description.
+example_usage:
+ - Vulnerability Scanner:
+    example_pairs:
+      Vendor_reference: MS14-068
+    example_keys:
+      - vulnInfo
+      - vulnerability_ref
+related_attributes:
+  vuln_name: Name of the vulnerability being referenced.
+---
+field_name: cloud_region
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The physical location a cloud provider operates their infrastucture from. E.g. AWS us-east-2 (Ohio), Azure Central US (Iowa), GCP asia-northeast1-a (Tokyo) etc.
+related_attributes:
+  cloud_zone: The zone within the region where a resource is located or is running.
+---
+field_name: cloud_zone
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The cloud infrastucture isolated within a region on which a resource is located or is running.
+example_usage:
+ - Cloud:
+    example_keys:
+      - AvailabilityZone
+      - Zone
+    example_values:
+      - us-west1-a
+      - Brazil South
+      - eu-central-1b
+related_attributes:
+  cloud_region: The region in which the zone is located.
+  accountId: The organizational account for the cloud provider under which resources run.
+---
+field_name: cloud_service
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The specific service offering from a cloud provider. E.g. AWS VPC Flow, Azure Virtual Machines, AWS Lambda, Alibaba Cloud ECS, GCP Compute Engine etc.
+related_attributes:
+  resource: The resource being acted upon may be a cloud service in some instances. It is OK to map to both if there are no more specific resources referenced in a log.
+  cloud_provider: The name of the cloud provider which provides the service.
+  accountId: The organizational account for the cloud provider under which resources run.
+  metadata_product: The service name may also be captured as product metadata. cloud_service can also be used in logs which reference a service but which do not necessarily orgiinate from that service.
+---
+field_name: cloud_provider
+population_method: mapping
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name of the cloud infrastucture operator, typically a public cloud provider. E.g. Google Cloud Platform (GCP), Amazon Web Services (AWS), Microsoft Azure, Alibaba Cloud etc.
+related_attributes:
+  cloud_service: The specific service from the cloud provider which is referenced or is producing the event.
+  accountId: The organizational account for the cloud provider under which resources run.
+  metadata_vendor: The cloud provider may also be captured as vendor metadata. cloud_provider can also be used in logs which reference a cloud vendor but which do not necessarily originated from that provider.
+---
+field_name: device_ip_asnNumber
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The autonomous system number for the device IP address based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  device_ip: The device IP address for which the ASN was derived.
+  device_ip_asnOrg: The organzation associated with the ASN based on the Neustar GeoIP database.
+---
+field_name: device_ip_asnOrg
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The organzation associated with the ASN based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  device_ip: The device IP address for which the ASN was derived.
+  device_ip_asnNumber: The autonomous system number which the organization is derived from based on the Neustar GeoIP database.
+---
+field_name: device_ip_city
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ City for the device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_ip: The device IP address for which the city was derived.
+---
+field_name: device_ip_countryCode
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Country code (e.g. US, CA, DE) for the device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_ip: The device IP address for which the country code was derived.
+---
+field_name: device_ip_region
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ State or Territory for the device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_ip: The device IP address for which the state or territory was derived.
+---
+field_name: device_ip_countryName
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Name of the country for the device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_ip: The device IP address for which the country name was derived.
+---
+field_name: device_ip_latitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Geographic latitude coordinate for the device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_ip: The device IP address for which the latitude was derived.
+  device_ip_longitude: Corresponding coordinate which when combined with latitude indicates the geographic location of the device IP.
+---
+field_name: device_ip_longitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Longitude coordinate for the device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_ip: The device IP address for which the longitude was derived.
+  device_ip_longitude: Corresponding coordinate which when combined with longitude indicates the geographic location of the device IP.
+---
+field_name: device_ip_location
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+  This value is populated based on uploaded Network Blocks. When there is a match, it will be populated with the network block label.
+related_attributes:
+  device_ip: The device IP address for which the location was derived.
+---
+field_name: device_ip_version
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Version of the IP protocol of the device IP.
+related_attributes:
+  device_ip: The device IP address for which the version corresponds.
+---
+field_name: device_ip_ipv4IntValue
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  The ipv4 address stored as an unsigned 64-bit integer value
+related_attributes:
+  device_ip: The device IP address for which the ipV4 integer value corresponds.
+---
+field_name: device_ip_isInternal
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Signifies whether the device IP address is internal or external. True if internal, False if external.
+related_attributes:
+  device_ip: The device IP address for which the internal or external determination is made.
+---
+field_name: srcDevice_ip_asnNumber
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The autonomous system number for the source device IP address based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the ASN was derived.
+  srcDevice_ip_asnOrg: The organzation associated with the ASN based on the Neustar GeoIP database.
+---
+field_name: srcDevice_ip_asnOrg
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The organzation associated with the ASN based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the ASN was derived.
+  srcDevice_ip_asnNumber: The autonomous system number which the organization is derived from based on the Neustar GeoIP database.
+---
+field_name: srcDevice_ip_city
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ City for the source device IP address based on the Neustar GeoIP database.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the city was derived.
+---
+field_name: srcDevice_ip_countryCode
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Country code (e.g. US, CA, DE) for the source device IP address based on the Neustar GeoIP database.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the country code was derived.
+---
+field_name: srcDevice_ip_region
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ State or Territory for the source device IP address based on the Neustar GeoIP database.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the state or territory was derived.
+---
+field_name: srcDevice_ip_countryName
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Name of the country for the source device IP address based on the Neustar GeoIP database.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the country name was derived.
+---
+field_name: srcDevice_ip_latitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Geographic latitude coordinate for the source device IP address based on the Neustar GeoIP database.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the latitude was derived.
+  srcDevice_ip_longitude: Corresponding coordinate which when combined with latitude indicates the geographic location of the source device IP.
+---
+field_name: srcDevice_ip_longitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Longitude coordinate for the source device IP address based on the Neustar GeoIP database.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the longitude was derived.
+  srcDevice_ip_longitude: Corresponding coordinate which when combined with longitude indicates the geographic location of the source device IP.
+---
+field_name: srcDevice_ip_location
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+  This value is populated based on uploaded Network Blocks. When there is a match, it will be populated with the network block label.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the location was derived.
+---
+field_name: srcDevice_ip_version
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Version of the IP protocol of the source device IP.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the version corresponds.
+---
+field_name: srcDevice_ip_ipv4IntValue
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  The ipv4 address stored as an unsigned 64-bit integer value
+related_attributes:
+  srcDevice_ip: The source device IP address for which the ipV4 integer value corresponds.
+---
+field_name: srcDevice_ip_isInternal
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Signifies whether the source device IP address is internal or external. True if internal, False if external.
+related_attributes:
+  srcDevice_ip: The source device IP address for which the internal or external determination is made.
+---
+field_name: dstDevice_ip_asnNumber
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The autonomous system number for the destination device IP address based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the ASN was derived.
+  dstDevice_ip_asnOrg: The organzation associated with the ASN based on the Neustar GeoIP database.
+---
+field_name: dstDevice_ip_asnOrg
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The organzation associated with the ASN based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the ASN was derived.
+  dstDevice_ip_asnNumber: The autonomous system number which the organization is derived from based on the Neustar GeoIP database.
+---
+field_name: dstDevice_ip_city
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ City for the destination device IP address based on the Neustar GeoIP database.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the city was derived.
+---
+field_name: dstDevice_ip_countryCode
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Country code (e.g. US, CA, DE) for the destination device IP address based on the Neustar GeoIP database.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the country code was derived.
+---
+field_name: dstDevice_ip_region
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ State or Territory for the destination device IP address based on the Neustar GeoIP database.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the state or territory was derived.
+---
+field_name: dstDevice_ip_countryName
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Name of the country for the destination device IP address based on the Neustar GeoIP database.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the country name was derived.
+---
+field_name: dstDevice_ip_latitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Geographic latitude coordinate for the destination device IP address based on the Neustar GeoIP database.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the latitude was derived.
+  dstDevice_ip_longitude: Corresponding coordinate which when combined with latitude indicates the geographic location of the destination device IP.
+---
+field_name: dstDevice_ip_longitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Longitude coordinate for the destination device IP address based on the Neustar GeoIP database.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the longitude was derived.
+  dstDevice_ip_longitude: Corresponding coordinate which when combined with longitude indicates the geographic location of the destination device IP.
+---
+field_name: dstDevice_ip_location
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+  This value is populated based on uploaded Network Blocks. When there is a match, it will be populated with the network block label.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the location was derived.
+---
+field_name: dstDevice_ip_version
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Version of the IP protocol of the destination device IP.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the version corresponds.
+---
+field_name: dstDevice_ip_ipv4IntValue
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  The ipv4 address stored as an unsigned 64-bit integer value
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the ipV4 integer value corresponds.
+---
+field_name: dstDevice_ip_isInternal
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Signifies whether the destination device IP address is internal or external. True if internal, False if external.
+related_attributes:
+  dstDevice_ip: The destination device IP address for which the internal or external determination is made.
+---
+field_name: device_natIp_asnNumber
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The autonomous system number for the NAT device IP address based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  device_natIp: The NAT device IP address for which the ASN was derived.
+  device_natIp_asnOrg: The organzation associated with the ASN based on the Neustar GeoIP database.
+---
+field_name: device_natIp_asnOrg
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The organzation associated with the ASN based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  device_natIp: The NAT device IP address for which the ASN was derived.
+  device_natIp_asnNumber: The autonomous system number which the organization is derived from based on the Neustar GeoIP database.
+---
+field_name: device_natIp_city
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ City for the NAT device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_natIp: The NAT device IP address for which the city was derived.
+---
+field_name: device_natIp_countryCode
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Country code (e.g. US, CA, DE) for the NAT device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_natIp: The NAT device IP address for which the country code was derived.
+---
+field_name: device_natIp_region
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ State or Territory for the NAT device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_natIp: The NAT device IP address for which the state or territory was derived.
+---
+field_name: device_natIp_countryName
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Name of the country for the NAT device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_natIp: The NAT device IP address for which the country name was derived.
+---
+field_name: device_natIp_latitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Geographic latitude coordinate for the NAT device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_natIp: The NAT device IP address for which the latitude was derived.
+  device_natIp_longitude: Corresponding coordinate which when combined with latitude indicates the geographic location of the NAT device IP.
+---
+field_name: device_natIp_longitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Longitude coordinate for the NAT device IP address based on the Neustar GeoIP database.
+related_attributes:
+  device_natIp: The NAT device IP address for which the longitude was derived.
+  device_natIp_longitude: Corresponding coordinate which when combined with longitude indicates the geographic location of the NAT device IP.
+---
+field_name: device_natIp_location
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+  This value is populated based on uploaded Network Blocks. When there is a match, it will be populated with the network block label.
+related_attributes:
+  device_natIp: The NAT device IP address for which the location was derived.
+---
+field_name: device_natIp_version
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Version of the IP protocol of the NAT device IP.
+related_attributes:
+  device_natIp: The NAT device IP address for which the version corresponds.
+---
+field_name: device_natIp_ipv4IntValue
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  The ipv4 address stored as an unsigned 64-bit integer value
+related_attributes:
+  device_natIp: The NAT device IP address for which the ipV4 integer value corresponds.
+---
+field_name: device_natIp_isInternal
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Signifies whether the NAT device IP address is internal or external. True if internal, False if external.
+related_attributes:
+  device_natIp: The NAT device IP address for which the internal or external determination is made.
+---
+field_name: dns_replyIp_asnNumber
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The autonomous system number for the DNS Reply IP address based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the ASN was derived.
+  dns_replyIp_asnOrg: The organzation associated with the ASN based on the Neustar GeoIP database.
+---
+field_name: dns_replyIp_asnOrg
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The organzation associated with the ASN based on the Neustar GeoIP database, typically assigned to internet service providers.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the ASN was derived.
+  dns_replyIp_asnNumber: The autonomous system number which the organization is derived from based on the Neustar GeoIP database.
+---
+field_name: dns_replyIp_city
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ City for the DNS Reply IP address based on the Neustar GeoIP database.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the city was derived.
+---
+field_name: dns_replyIp_countryCode
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Country code (e.g. US, CA, DE) for the DNS Reply IP address based on the Neustar GeoIP database.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the country code was derived.
+---
+field_name: dns_replyIp_region
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ State or Territory for the DNS Reply IP address based on the Neustar GeoIP database.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the state or territory was derived.
+---
+field_name: dns_replyIp_countryName
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Name of the country for the DNS Reply IP address based on the Neustar GeoIP database.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the country name was derived.
+---
+field_name: dns_replyIp_latitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Geographic latitude coordinate for the DNS Reply IP address based on the Neustar GeoIP database.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the latitude was derived.
+  dns_replyIp_longitude: Corresponding coordinate which when combined with latitude indicates the geographic location of the DNS Reply IP.
+---
+field_name: dns_replyIp_longitude
+population_method: enrichment
+type: float
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Longitude coordinate for the DNS Reply IP address based on the Neustar GeoIP database.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the longitude was derived.
+  dns_replyIp_longitude: Corresponding coordinate which when combined with longitude indicates the geographic location of the DNS Reply IP.
+---
+field_name: dns_replyIp_location
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+  This value is populated based on uploaded Network Blocks. When there is a match, it will be populated with the network block label.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the location was derived.
+---
+field_name: dns_replyIp_version
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Version of the IP protocol of the DNS Reply IP.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the version corresponds.
+---
+field_name: dns_replyIp_ipv4IntValue
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  The ipv4 address stored as an unsigned 64-bit integer value
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the ipV4 integer value corresponds.
+---
+field_name: dns_replyIp_isInternal
+population_method: enrichment
+type: int
+entity_type: 
+enrichment_attribute: true
+description: |-
+  Signifies whether the DNS Reply IP address is internal or external. True if internal, False if external.
+related_attributes:
+  dns_replyIp: The DNS Reply IP address for which the internal or external determination is made.
+---
+field_name: http_referer_alexaRank
+population_method: enrichment
+type: long
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The HTTP referer domain's rank among the top 10k sites by Alexa traffic rank. NULL if not in the list.
+related_attributes:
+  http_referer: The HTTP referer URL for which the domain rank is derived.
+---
+field_name: http_referer_entropyFqdn
+population_method: enrichment
+type: double
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The entropy calculation of the Fully Qualified Domain Name (FQDN) of the HTTP referer.
+related_attributes:
+  http_referer: The HTTP referer URL for which the FQDN entropy is being derived.
+  http_referer_fqdn: The FQDN of the HTTP referer URL for which the entropy calculation is being derived.
+---
+field_name: http_referer_entropyRootDomain
+population_method: enrichment
+type: double
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The entropy calculation of the root domain of the HTTP referer.
+related_attributes:
+  http_referer: The HTTP referer URL for which the root domain entropy is being derived.
+---
+field_name: http_referer_fqdn
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The fully qualified domain name in the HTTP referer URL (e.g. somehost.sumologic.com).
+related_attributes:
+  http_referer: The HTTP referer URL from which the FQDN is extracted.
+  http_referer_entropyFqdn: The entropy calculation of the HTTP referer URL FQDN.
+---
+field_name: http_referer_path
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The path component of the HTTP referer URL (e.g. somepath/something)
+related_attributes:
+  http_referer: The HTTP referer URL from which the path is extracted.
+---
+field_name: http_referer_possibeDga
+population_method: enrichment
+type: boolean
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Whether or not the HTTP referer URL domain is potentially a Domain Generation Algorithm created domain based on our backend analytics.
+related_attributes:
+  http_referer: The HTTP referer URL against which the Domain Generation Algorithm created domain determination is made.
+---
+field_name: http_referer_possibeDynDns
+population_method: enrichment
+type: boolean
+entity_type: 
+enrichment_attribute: true
+description: |-
+ A likely dynamic (not static) IP address associated with the HTTP referer URL domain.
+related_attributes:
+  http_referer: The HTTP referer URL against which the Dynamic DNS usage determination is made.
+---
+field_name: http_referer_protocol
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The HTTP referer URL protocol (e.g. https).
+related_attributes:
+  http_referer: The HTTP referer URL from which the protocol is extracted.
+---
+field_name: http_referer_rootDomain
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The root domain of hostname in the HTTP referer URL (e.g. sumologic.com).
+related_attributes:
+  http_referer: The HTTP referer URL from which the root domain is extracted.
+---
+field_name: http_referer_tld
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The top-level-domain field of the domain name in the HTTP referer URL (e.g. com, net, org)
+related_attributes:
+  http_referer: The HTTP referer URL from which the tld is extracted.
+---
+field_name: http_url_alexaRank
+population_method: enrichment
+type: long
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The HTTP referer domain's rank among the top 10k sites by Alexa traffic rank. NULL if not in the list.
+related_attributes:
+  http_url: The HTTP URL for which the domain rank is derived.
+---
+field_name: http_url_entropyFqdn
+population_method: enrichment
+type: double
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The entropy calculation of the Fully Qualified Domain Name (FQDN) of the HTTP referer.
+related_attributes:
+  http_url: The HTTP URL for which the FQDN entropy is being derived.
+  http_url_fqdn: The FQDN of the HTTP URL for which the entropy calculation is being derived.
+---
+field_name: http_url_entropyRootDomain
+population_method: enrichment
+type: double
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The entropy calculation of the root domain of the HTTP referer.
+related_attributes:
+  http_url: The HTTP URL for which the root domain entropy is being derived.
+---
+field_name: http_url_fqdn
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The fully qualified domain name in the HTTP URL (e.g. somehost.sumologic.com).
+related_attributes:
+  http_url: The HTTP URL from which the FQDN is extracted.
+  http_url_entropyFqdn: The entropy calculation of the HTTP URL FQDN.
+---
+field_name: http_url_path
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The path component of the HTTP URL (e.g. somepath/something)
+related_attributes:
+  http_url: The HTTP URL from which the path is extracted.
+---
+field_name: http_url_possibeDga
+population_method: enrichment
+type: boolean
+entity_type: 
+enrichment_attribute: true
+description: |-
+ Whether or not the HTTP URL domain is potentially a Domain Generation Algorithm created domain based on our backend analytics.
+related_attributes:
+  http_url: The HTTP URL against which the Domain Generation Algorithm created domain determination is made.
+---
+field_name: http_url_possibeDynDns
+population_method: enrichment
+type: boolean
+entity_type: 
+enrichment_attribute: true
+description: |-
+ A likely dynamic (not static) IP address associated with the HTTP URL domain.
+related_attributes:
+  http_url: The HTTP URL against which the Dynamic DNS usage determination is made.
+---
+field_name: http_url_protocol
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The HTTP URL protocol (e.g. https).
+related_attributes:
+  http_url: The HTTP URL from which the protocol is extracted.
+---
+field_name: http_url_rootDomain
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The root domain of hostname in the HTTP URL (e.g. sumologic.com).
+related_attributes:
+  http_url: The HTTP URL from which the root domain is extracted.
+---
+field_name: http_url_tld
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The top-level-domain field of the domain name in the HTTP URL (e.g. com, net, org)
+related_attributes:
+  http_url: The HTTP URL from which the tld is extracted.
+---
+field_name: user_username_role
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The role that is extracted from the normalized actor username (such as from an AWS assumed role ARN).
+related_attributes:
+  user_username: The username from which the role was extracted.
+---
+field_name: targetuser_username_role
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The role that is extracted from the normalized target username (such as from an AWS assumed role ARN).
+related_attributes:
+  targetuser_username: The target username from which the role was extracted.
+---
+field_name: targetuser_username_raw
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The target username before any enrichments are applied. As the username appears in the original log message.
+related_attributes:
+  targetuser_username: The target username after enrichments have been applied (if any).
+---
+field_name: user_username_raw
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The actor username before any enrichments are applied. As the username appears in the original log message.
+related_attributes:
+  user_username: The actor username after enrichments have been applied (if any).
+---
+field_name: device_hostname_raw
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The device hostname before any enrichments are applied. As the hostname appears in the original log message.
+related_attributes:
+  device_hostname: The device hostname after enrichments have been applied (if any).
+---
+field_name: srcDevice_hostname_raw
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The source device hostname before any enrichments are applied. As the hostname appears in the original log message.
+related_attributes:
+  srcDevice_hostname: The source device hostname after enrichments have been applied (if any).
+---
+field_name: dstDevice_hostname_raw
+population_method: enrichment
+type: string
+entity_type: 
+enrichment_attribute: true
+description: |-
+ The destination device hostname before any enrichments are applied. As the hostname appears in the original log message.
+related_attributes:
+  dstDevice_hostname: The destination device hostname after enrichments have been applied (if any).
+---
+field_name: metadata_defaultTz
+population_method: metadata
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Default timezone for timestamp parsing
+related_attributes:
+---
+field_name: metadata_deviceEventId
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Vendor specific event identifier. Is provided in the parser output and determines which mapping will be used.
+related_attributes:
+  description: Often a verbose description of what the event ID means.
+  success: A boolean attribute indicating whether or not the event was a success or a failure.
+---
+field_name: metadata_mapperName
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ CSE mapper name which normalizes the record.
+related_attributes:
+  metadata_mapperUid: The universally unique identifier for the mapper.
+---
+field_name: metadata_mapperUid
+population_method: metadata
+type: int
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Universally unique identifier for CSE normalization mappers.
+related_attributes:
+  metadata_mapperName: The CSE mapper name which the mapper UID is tied to.
+---
+field_name: metadata_parseTime
+population_method: metadata
+type: long
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The time at which the log line was parsed into a record by the parser and mapper service in milliseconds since epoch
+related_attributes:
+  timestamp: Timestamp is typically parsed and mapped from the log data, while parseTime records when the message itself was parsed.
+  metadata_receiptTime: Time at which the log was received by the system prior to parseTime.
+---
+field_name: metadata_parser
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Name of the parser which extracted fields from the original log message.
+related_attributes:
+  metadata_mapperName: Name of the mapper which normalizes a parsed log.
+---
+field_name: metadata_product
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The specific product name of the data source.
+related_attributes:
+  metadata_vendor: The vendor which created the product.
+---
+field_name: metadata_vendor
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The name of the company responsible for the data source.
+related_attributes:
+  metadata_product: The product which the vendor created.
+---
+field_name: metadata_productGuid
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ Globally unique identifier for the combined vendor and product.
+related_attributes:
+  metadata_product: Product referenced by the GUID.
+  metadata_vendor: Vendor referened by the GUID.
+---
+field_name: metadata_receiptTime
+population_method: metadata
+type: long
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The time at which the log line was received by the collector in milliseconds since epoch
+related_attributes:
+  timestamp: Timestamp is typically parsed and mapped from the log data, while receipt records when the message itself was received.
+  metadata_parseTime: Time at which the log was by the system after receiptTime.
+---
+field_name: metadata_sensorZone
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ A name propagated from the sensors. In the case where sensors are installed in environments with overlapping IP address spaces, this is used to distinguish two identical IP addresses from each other.
+related_attributes:
+---
+field_name: metadata_sourceCategory
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The Sumologic source category of the data.
+related_attributes:
+---
+field_name: metadata_sourceMessageId
+population_method: metadata
+type: string
+entity_type: 
+enrichment_attribute: false
+description: |-
+ The _messageID of the original source log message (from SumoLogic CIP).
+related_attributes:

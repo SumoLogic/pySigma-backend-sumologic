@@ -11,9 +11,28 @@ jobs:
     runs-on: ubuntu-latest
     environment: release
     permissions:
-      id-token: write
+      contents: read  # Required to check out code
+      id-token: write  # Required for OIDC authentication to PyPI
     steps:
       - uses: actions/checkout@v5
+      - name: Determine target environment
+        id: target
+        run: |
+          if [ "${{ github.event_name }}" == "push" ]; then
+            echo "environment=TestPyPI" >> $GITHUB_OUTPUT
+            echo "repository=test.pypi.org" >> $GITHUB_OUTPUT
+          else
+            echo "environment=Production PyPI" >> $GITHUB_OUTPUT
+            echo "repository=pypi.org" >> $GITHUB_OUTPUT
+          fi
+      - name: Release Information
+        run: |
+          echo "=========================================="
+          echo "Release to: ${{ steps.target.outputs.environment }}"
+          echo "Repository: ${{ steps.target.outputs.repository }}"
+          echo "Version: ${GITHUB_REF#refs/tags/v}"
+          echo "Trigger: ${{ github.event_name }}"
+          echo "=========================================="
       - name: Install Poetry
         run: pipx install poetry
       - name: Set up Python
@@ -29,11 +48,11 @@ jobs:
         run: poetry run pytest
       - name: Build packages
         run: poetry build
-      - name: Publish to test PyPI
+      - name: Publish to Test PyPI
         if: ${{ github.event_name == 'push' }}
         uses: pypa/gh-action-pypi-publish@release/v1
         with:
           repository-url: https://test.pypi.org/legacy/
-      - name: Publish to PyPI
+      - name: Publish to Production PyPI
         if: ${{ github.event_name == 'release' }}
         uses: pypa/gh-action-pypi-publish@release/v1

@@ -1,2 +1,6 @@
-from .sumologic import sumologic_pipeline
-# TODO: add all pipelines that should be exposed to the user of your backend in the import statement above.
+from .sumologic import sumologic_cse_pipeline
+
+# Pipeline registry for sigma-cli
+pipelines = {
+    "sumologic_cse": sumologic_cse_pipeline,
+}
