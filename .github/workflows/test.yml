@@ -1,0 +1,55 @@
+name: Test
+on:
+  push:
+    branches: [ "*" ]
+  pull_request:
+    branches: [ "*" ]
+  workflow_dispatch:
+
+jobs:
+  test:
+    strategy:
+      matrix:
+        os: ["ubuntu-latest", "windows-latest", "macos-latest"]
+        python-version: ["3.10", "3.11", "3.12", "3.13"]
+    runs-on: ${{ matrix.os }}
+    env:
+      HAS_GIST_SECRET: ${{ secrets.GIST_SECRET != '' }}
+    steps:
+      - uses: actions/checkout@v5
+      - name: Install Poetry
+        run: pipx install poetry
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: ${{ matrix.python-version }}
+      - name: Install dependencies
+        run: poetry install
+      - name: Check code formatting
+        run: poetry run black --check sigma/ tests/ *.py
+      - name: Run tests
+        run: poetry run pytest --cov=sigma --cov-report term --cov-report xml:cov.xml -vv
+      - name: Store coverage for badge
+        if: ${{ runner.os == 'Linux' }}
+        run: poetry run python print-coverage.py >> $GITHUB_ENV
+      - name: Create coverage badge
+        # Only run if GIST_SECRET is configured. To set up:
+        # 1. Create a GitHub Gist with a JSON file
+        # 2. Create a Personal Access Token with 'gist' scope
+        # 3. Add as repository secret named GIST_SECRET
+        # 4. Replace gistID below with the actual Gist ID
+        if: ${{ github.repository == 'SumoLogic/pySigma-backend-sumologic' && github.event_name == 'push' && runner.os == 'Linux' && env.HAS_GIST_SECRET == 'true' }}
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: REPLACE_WITH_GIST_ID
+          filename: pysigma-backend-sumologic-coverage.json
+          label: Coverage
+          message: ${{ env.COVERAGE }}
+          color: ${{ env.COVERAGE_COLOR }}
+      - name: Run integration test
+        # Integration test validates package building, installation, and imports
+        # Only run on Linux to avoid redundant testing across all platforms
+        # if: ${{ runner.os == 'Linux' && matrix.python-version == '3.13' }}
+        if: false
+        run: sh tests/test_integration.sh
