@@ -5,4 +5,7 @@
 .pytest_cache/
 cov.xml
 dist/
-docs/_build.env
+docs/_build
+.env
+.DS_Store
+uv.lock
