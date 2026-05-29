@@ -273,7 +273,7 @@ def test_eventid_list_transformation(backend):
 
 def test_known_good_mappings_confidence():
     """Test that known-good mappings (Action→action, eventName→action) pass confidence checks."""
-    # Use default confidence threshold (0.7)
+    # Use default confidence threshold (0.25)
     backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline())
 
     # Test AWS CloudTrail with eventName → action

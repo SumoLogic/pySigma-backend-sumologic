@@ -162,7 +162,7 @@ def convert_rules(
     """
     pipeline = sumologic_cse_pipeline()
 
-    min_confidence = 0.7 if enable_confidence else 0.0
+    min_confidence = 0.25 if enable_confidence else 0.0
     backend = SumoLogicCSERuleBackend(
         processing_pipeline=pipeline, min_confidence=min_confidence
     )
