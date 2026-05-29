@@ -3,6 +3,7 @@ name = "pysigma-backend-sumologic"
 version = "0.2.1"
 description = "pySigma Sumo Logic Cloud SIEM backend with confidence scoring"
 authors = ["Julian Crowley <jcrowley@sumologic.com>","Dinesh Meka <dinesh.meka@sumologic.com>"]
+readme = "README.md"
 license = "LGPL-3.0-only"
 repository = "https://github.com/SumoLogic/pySigma-backend-sumologic"
 packages = [
