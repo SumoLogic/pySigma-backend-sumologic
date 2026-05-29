@@ -18,7 +18,7 @@ poetry build
 TEMP_DIR=$(mktemp -d)
 cd "$TEMP_DIR"
 python3 -m venv venv
-source venv/bin/activate
+. venv/bin/activate
 
 # Install package
 echo "Installing package..."
@@ -39,7 +39,7 @@ from sigma.pipelines.sumologic import sumologic_cse_pipeline
 with open('test_sigma_rule.yml') as f:
     rule = SigmaCollection.from_yaml(f.read())
 
-backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline())
+backend = SumoLogicCSERuleBackend(processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0)
 result = backend.convert(rule)
 json_result = json.loads(result[0])
 print(json_result)

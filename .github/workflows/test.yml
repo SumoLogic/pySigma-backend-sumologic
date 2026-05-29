@@ -13,6 +13,8 @@ jobs:
         os: ["ubuntu-latest", "windows-latest", "macos-latest"]
         python-version: ["3.10", "3.11", "3.12", "3.13"]
     runs-on: ${{ matrix.os }}
+    env:
+      HAS_GIST_SECRET: ${{ secrets.GIST_SECRET != '' }}
     steps:
       - uses: actions/checkout@v5
       - name: Install Poetry
@@ -36,11 +38,11 @@ jobs:
         # 2. Create a Personal Access Token with 'gist' scope
         # 3. Add as repository secret named GIST_SECRET
         # 4. Replace gistID below with the actual Gist ID
-        if: ${{ github.repository == 'SumoLogic/pySigma-backend-sumologic' && github.event_name == 'push' && runner.os == 'Linux' && secrets.GIST_SECRET != '' }}
+        if: ${{ github.repository == 'SumoLogic/pySigma-backend-sumologic' && github.event_name == 'push' && runner.os == 'Linux' && env.HAS_GIST_SECRET == 'true' }}
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
-          gistID: GitHub Gist identifier containing coverage badge JSON expected by shields.io.
+          gistID: REPLACE_WITH_GIST_ID
           filename: pysigma-backend-sumologic-coverage.json
           label: Coverage
           message: ${{ env.COVERAGE }}
