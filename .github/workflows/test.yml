@@ -27,6 +27,8 @@ jobs:
         run: poetry install
       - name: Check code formatting
         run: poetry run black --check sigma/ tests/ *.py
+      - name: Run type checks
+        run: poetry run mypy sigma/
       - name: Run tests
         run: poetry run pytest --cov=sigma --cov-report term --cov-report xml:cov.xml -vv
       - name: Store coverage for badge
