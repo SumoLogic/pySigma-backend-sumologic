@@ -42,7 +42,7 @@ jobs:
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
-          gistID: REPLACE_WITH_GIST_ID
+          gistID: 6d3725acf17134aee954b139dd60d316
           filename: pysigma-backend-sumologic-coverage.json
           label: Coverage
           message: ${{ env.COVERAGE }}
