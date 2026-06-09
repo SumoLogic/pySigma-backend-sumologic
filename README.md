@@ -4,6 +4,7 @@
 [![PyPI](https://img.shields.io/pypi/v/pysigma-backend-sumologic)](https://pypi.org/project/pysigma-backend-sumologic/)
 ![Python](https://img.shields.io/pypi/pyversions/pysigma-backend-sumologic)
 ![License](https://img.shields.io/github/license/SumoLogic/pySigma-backend-sumologic)
+![Coverage](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/jc-sumo/6d3725acf17134aee954b139dd60d316/raw/pysigma-backend-sumologic-coverage.json)
 
 ## Overview
 
@@ -181,6 +182,8 @@ pytest
 # Run with coverage
 pytest --cov=sigma --cov-report=term
 ```
+
+CI also runs `mypy sigma/`, so local changes should pass type checks before opening a PR.
 
 ## Resources
 

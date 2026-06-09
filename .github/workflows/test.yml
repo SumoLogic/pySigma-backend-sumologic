@@ -27,6 +27,8 @@ jobs:
         run: poetry install
       - name: Check code formatting
         run: poetry run black --check sigma/ tests/ *.py
+      - name: Run type checks
+        run: poetry run mypy sigma/
       - name: Run tests
         run: poetry run pytest --cov=sigma --cov-report term --cov-report xml:cov.xml -vv
       - name: Store coverage for badge
@@ -42,7 +44,7 @@ jobs:
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
-          gistID: REPLACE_WITH_GIST_ID
+          gistID: 6d3725acf17134aee954b139dd60d316
           filename: pysigma-backend-sumologic-coverage.json
           label: Coverage
           message: ${{ env.COVERAGE }}
