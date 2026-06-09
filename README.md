@@ -183,6 +183,8 @@ pytest
 pytest --cov=sigma --cov-report=term
 ```
 
+CI also runs `mypy sigma/`, so local changes should pass type checks before opening a PR.
+
 ## Resources
 
 - [Sumo Logic Cloud SIEM Documentation](https://www.sumologic.com/help/docs/cse/)
