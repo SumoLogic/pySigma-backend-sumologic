@@ -10,6 +10,7 @@ from sigma.rule import SigmaRule
 from sigma.processing.pipeline import ProcessingPipeline
 import re
 import json
+import yaml
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 
@@ -137,6 +138,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         schema_path: Optional[str] = None,
         include_confidence_metadata: bool = True,
         fail_on_unmapped_logsource: bool = False,
+        include_full_sigma_rule: bool = False,
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
@@ -145,6 +147,10 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.schema_path = schema_path
         self.include_confidence_metadata = include_confidence_metadata
         self.fail_on_unmapped_logsource = fail_on_unmapped_logsource
+        if isinstance(include_full_sigma_rule, str):
+            self.include_full_sigma_rule = include_full_sigma_rule.lower() in ("true", "1", "yes")
+        else:
+            self.include_full_sigma_rule = bool(include_full_sigma_rule)
 
         # Load CSE schema for field type checking
         from sigma.pipelines.sumologic.schema_loader import SchemaLoader
@@ -152,6 +158,13 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.schema = SchemaLoader.load(
             schema_path
         )  # Uses bundled schema if path is None
+
+    def convert_rule(self, rule: SigmaRule, output_format=None, callback=None):
+        if self.include_full_sigma_rule:
+            rule._original_yaml = yaml.dump(  # type: ignore[attr-defined]
+                rule.to_dict(), default_flow_style=False, sort_keys=False
+            )
+        return super().convert_rule(rule, output_format, callback)
 
     def escape_and_quote_field(self, field_name: str) -> str:
         """
@@ -906,6 +919,12 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
             # Add confidence metadata to rule JSON
             rule_json["mapping_confidence"] = confidence_metadata  # type: ignore[assignment]
+
+        if self.include_full_sigma_rule:
+            rule_json["full_sigma_rule"] = getattr(  # type: ignore[assignment]
+                rule, "_original_yaml", ""
+            )
+
         return rule_json
 
     def _get_used_fields(self, rule: SigmaRule) -> set:
