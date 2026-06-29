@@ -10,7 +10,9 @@ from sigma.rule import SigmaRule
 from sigma.processing.pipeline import ProcessingPipeline
 import re
 import json
+import subprocess
 import yaml
+from datetime import datetime, timezone
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 
@@ -859,7 +861,6 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Create rule JSON
         rule_json = {
             "content_type": "RULE",
-            "sigma_uid": str(rule.id) if rule.id else None,
             "enabled": enabled,
             "is_prototype": prototype,
             "name": rule.title,
@@ -889,6 +890,18 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Add category (derived from MITRE tactic tags)
         rule_json["category"] = category
 
+        # Build conversion_metadata object
+        conversion_metadata: Dict[str, Any] = {
+            "sigma_uid": str(rule.id) if rule.id else None,
+            "conversion_timestamp": datetime.now(timezone.utc).isoformat(),
+            "sigma_rule_commit": self._get_rule_commit(rule),
+        }
+
+        if self.include_full_sigma_rule:
+            conversion_metadata["full_sigma_rule"] = getattr(
+                rule, "_original_yaml", ""
+            )
+
         # Collect and inject confidence metadata
         if self.include_confidence_metadata:
             confidence_metadata = self._collect_confidence_metadata(rule)
@@ -917,15 +930,29 @@ class SumoLogicCSEBackend(TextQueryBackend):
                     f"Use -O fail_on_unmapped_logsource=false to allow conversion without metadata filters."
                 )
 
-            # Add confidence metadata to rule JSON
-            rule_json["mapping_confidence"] = confidence_metadata  # type: ignore[assignment]
+            conversion_metadata["mapping_confidence"] = confidence_metadata
 
-        if self.include_full_sigma_rule:
-            rule_json["full_sigma_rule"] = getattr(  # type: ignore[assignment]
-                rule, "_original_yaml", ""
-            )
+        rule_json["conversion_metadata"] = conversion_metadata  # type: ignore[assignment]
 
         return rule_json
+
+    def _get_rule_commit(self, rule: SigmaRule) -> Optional[str]:
+        """Get the git commit hash of the input Sigma rule file."""
+        if not rule.source or not hasattr(rule.source, "path") or not rule.source.path:
+            return None
+        try:
+            result = subprocess.run(
+                ["git", "log", "-1", "--format=%H", "--", str(rule.source.path)],
+                capture_output=True,
+                text=True,
+                cwd=str(rule.source.path.parent),
+                timeout=5,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            pass
+        return None
 
     def _get_used_fields(self, rule: SigmaRule) -> set:
         """
