@@ -132,6 +132,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     DEFAULT_CATEGORY: ClassVar[str] = "Unknown/Other"
 
+    DEFAULT_RULE_SOURCE: ClassVar[str] = "user"
+
     def __init__(
         self,
         processing_pipeline: Optional[Any] = None,
@@ -142,6 +144,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         fail_on_unmapped_logsource: bool = False,
         include_full_sigma_rule: bool = False,
         include_conversion_metadata: bool = True,
+        rule_source: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
@@ -152,6 +155,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.fail_on_unmapped_logsource = fail_on_unmapped_logsource
         self.include_full_sigma_rule = self._parse_bool(include_full_sigma_rule)
         self.include_conversion_metadata = self._parse_bool(include_conversion_metadata)
+        self.rule_source = str(rule_source) if rule_source else self.DEFAULT_RULE_SOURCE
 
         # Load CSE schema for field type checking
         from sigma.pipelines.sumologic.schema_loader import SchemaLoader
@@ -870,7 +874,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             "is_prototype": prototype,
             "name": rule.title,
             "name_expression": rule.title,
-            "rule_source": "user",
+            "rule_source": self.rule_source,
             "summary_expression": "",
             "pattern_type": "templated_match",
             "stream": "record",

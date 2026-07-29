@@ -54,6 +54,11 @@ Use custom CSE schema file:
 sigma convert -t sumologic_cse -p sumologic_cse -O schema_path=/path/to/schema.json rule.yml
 ```
 
+Set the `rule_source` field on converted rules (defaults to `user`):
+```bash
+sigma convert -t sumologic_cse_rule -p sumologic_cse -O rule_source=sigma rule.yml
+```
+
 ## Using Programmatically
 
 ### Basic Usage
@@ -97,6 +102,15 @@ print(result[0])
 backend = SumoLogicCSERuleBackend(
     processing_pipeline=sumologic_cse_pipeline(),
     min_confidence=0.6  # Lower threshold
+)
+```
+
+### With Custom Rule Source
+
+```python
+backend = SumoLogicCSERuleBackend(
+    processing_pipeline=sumologic_cse_pipeline(),
+    rule_source="sigma"  # Defaults to "user"
 )
 ```
 

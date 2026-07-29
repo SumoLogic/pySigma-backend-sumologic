@@ -614,3 +614,53 @@ def test_sumologic_keywords_error(sumologic_backend: SumoLogicCSERuleBackend):
     # Should show how to fix it
     assert "Solution:" in error_msg
     assert "commandLine|contains:" in error_msg
+
+
+RULE_SOURCE_TEST_RULE = """
+title: Rule Source Test
+id: 00000000-0000-0000-0002-000000000001
+status: test
+logsource:
+    category: process_creation
+    product: windows
+detection:
+    sel:
+        Image: "test.exe"
+    condition: sel
+"""
+
+
+def test_sumologic_rule_source_default(sumologic_backend: SumoLogicCSERuleBackend):
+    """Test that rule_source defaults to 'user' when the option is not set."""
+    result = sumologic_backend.convert(SigmaCollection.from_yaml(RULE_SOURCE_TEST_RULE))
+
+    json_result = json.loads(result[0])["rules"][0]
+    assert json_result["rule_source"] == "user"
+
+
+@pytest.mark.parametrize("rule_source", ["sigma", "user", "custom-source"])
+def test_sumologic_rule_source_option(rule_source: str):
+    """Test that the rule_source option overrides the default value."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        rule_source=rule_source,
+    )
+    result = backend.convert(SigmaCollection.from_yaml(RULE_SOURCE_TEST_RULE))
+
+    json_result = json.loads(result[0])["rules"][0]
+    assert json_result["rule_source"] == rule_source
+
+
+@pytest.mark.parametrize("rule_source", [None, ""])
+def test_sumologic_rule_source_empty_falls_back_to_default(rule_source):
+    """Test that an unset or empty rule_source falls back to the default."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        rule_source=rule_source,
+    )
+    result = backend.convert(SigmaCollection.from_yaml(RULE_SOURCE_TEST_RULE))
+
+    json_result = json.loads(result[0])["rules"][0]
+    assert json_result["rule_source"] == "user"
