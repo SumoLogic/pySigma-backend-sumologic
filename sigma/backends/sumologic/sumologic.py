@@ -870,7 +870,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
             "is_prototype": prototype,
             "name": rule.title,
             "name_expression": rule.title,
-            "rule_source": "user",
+            "rule_source": "sigma",
             "summary_expression": "",
             "pattern_type": "templated_match",
             "stream": "record",

@@ -164,7 +164,7 @@ Complete CSE rule with metadata:
       "is_prototype": false,
       "name": "Suspicious PowerShell Download",
       "name_expression": "Suspicious PowerShell Download",
-      "rule_source": "user",
+      "rule_source": "sigma",
       "summary_expression": "",
       "tags": ["_mitreAttackTactic:TA0002"],
       "category": "Execution",

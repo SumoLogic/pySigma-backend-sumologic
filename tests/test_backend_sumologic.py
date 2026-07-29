@@ -56,7 +56,7 @@ def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
     assert json_result["content_type"] == "RULE"
     assert json_result["pattern_type"] == "templated_match"
     assert json_result["stream"] == "record"
-    assert json_result["rule_source"] == "user"
+    assert json_result["rule_source"] == "sigma"
     assert "category" in json_result
     assert "description_expression" in json_result
     assert "summary_expression" in json_result
@@ -312,7 +312,7 @@ def test_sumologic_json_structure(sumologic_backend: SumoLogicCSERuleBackend):
     assert "stream" in json_result
     assert json_result["stream"] == "record"
     assert "rule_source" in json_result
-    assert json_result["rule_source"] == "user"
+    assert json_result["rule_source"] == "sigma"
 
     # Verify values
     assert json_result["enabled"] is True
