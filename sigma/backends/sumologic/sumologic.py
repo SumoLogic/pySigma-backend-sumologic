@@ -10,6 +10,9 @@ from sigma.rule import SigmaRule
 from sigma.processing.pipeline import ProcessingPipeline
 import re
 import json
+import subprocess
+import yaml
+from datetime import datetime, timezone
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 
@@ -129,6 +132,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
 
     DEFAULT_CATEGORY: ClassVar[str] = "Unknown/Other"
 
+    DEFAULT_RULE_SOURCE: ClassVar[str] = "user"
+
     def __init__(
         self,
         processing_pipeline: Optional[Any] = None,
@@ -137,6 +142,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
         schema_path: Optional[str] = None,
         include_confidence_metadata: bool = True,
         fail_on_unmapped_logsource: bool = False,
+        include_full_sigma_rule: bool = False,
+        include_conversion_metadata: bool = True,
+        rule_source: Optional[str] = None,
         **kwargs,
     ):
         super().__init__(processing_pipeline, collect_errors, **kwargs)
@@ -145,6 +153,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.schema_path = schema_path
         self.include_confidence_metadata = include_confidence_metadata
         self.fail_on_unmapped_logsource = fail_on_unmapped_logsource
+        self.include_full_sigma_rule = self._parse_bool(include_full_sigma_rule)
+        self.include_conversion_metadata = self._parse_bool(include_conversion_metadata)
+        self.rule_source = str(rule_source) if rule_source else self.DEFAULT_RULE_SOURCE
 
         # Load CSE schema for field type checking
         from sigma.pipelines.sumologic.schema_loader import SchemaLoader
@@ -152,6 +163,19 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.schema = SchemaLoader.load(
             schema_path
         )  # Uses bundled schema if path is None
+
+    @staticmethod
+    def _parse_bool(value) -> bool:
+        if isinstance(value, str):
+            return value.lower() in ("true", "1", "yes")
+        return bool(value)
+
+    def convert_rule(self, rule: SigmaRule, output_format=None, callback=None):
+        if self.include_full_sigma_rule:
+            rule._original_yaml = yaml.dump(  # type: ignore[attr-defined]
+                rule.to_dict(), default_flow_style=False, sort_keys=False
+            )
+        return super().convert_rule(rule, output_format, callback)
 
     def escape_and_quote_field(self, field_name: str) -> str:
         """
@@ -846,12 +870,11 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Create rule JSON
         rule_json = {
             "content_type": "RULE",
-            "sigma_uid": str(rule.id) if rule.id else None,
             "enabled": enabled,
             "is_prototype": prototype,
             "name": rule.title,
             "name_expression": rule.title,
-            "rule_source": "user",
+            "rule_source": self.rule_source,
             "summary_expression": "",
             "pattern_type": "templated_match",
             "stream": "record",
@@ -876,11 +899,10 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Add category (derived from MITRE tactic tags)
         rule_json["category"] = category
 
-        # Collect and inject confidence metadata
+        # Confidence checks (always enforced regardless of metadata output)
         if self.include_confidence_metadata:
             confidence_metadata = self._collect_confidence_metadata(rule)
 
-            # Check confidence threshold
             if (
                 confidence_metadata["overall_score"]
                 < confidence_metadata["threshold_used"]
@@ -890,7 +912,6 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 error_msg = self._build_confidence_error_message(confidence_metadata)
                 raise SigmaFeatureNotSupportedByBackendError(error_msg)
 
-            # Check for unmapped logsource if strict mode enabled
             if self.fail_on_unmapped_logsource and not confidence_metadata.get(
                 "has_vendor_mapping", True
             ):
@@ -904,9 +925,43 @@ class SumoLogicCSEBackend(TextQueryBackend):
                     f"Use -O fail_on_unmapped_logsource=false to allow conversion without metadata filters."
                 )
 
-            # Add confidence metadata to rule JSON
-            rule_json["mapping_confidence"] = confidence_metadata  # type: ignore[assignment]
+        # Build conversion_metadata object (optional output)
+        if self.include_conversion_metadata:
+            conversion_metadata_obj: Dict[str, Any] = {
+                "sigma_uid": str(rule.id) if rule.id else None,
+                "conversion_timestamp": datetime.now(timezone.utc).isoformat(),
+                "sigma_rule_commit": self._get_rule_commit(rule),
+            }
+
+            if self.include_full_sigma_rule:
+                conversion_metadata_obj["full_sigma_rule"] = getattr(
+                    rule, "_original_yaml", ""
+                )
+
+            if self.include_confidence_metadata:
+                conversion_metadata_obj["mapping_confidence"] = confidence_metadata
+
+            rule_json["conversion_metadata"] = conversion_metadata_obj  # type: ignore[assignment]
+
         return rule_json
+
+    def _get_rule_commit(self, rule: SigmaRule) -> Optional[str]:
+        """Get the git commit hash of the input Sigma rule file."""
+        if not rule.source or not hasattr(rule.source, "path") or not rule.source.path:
+            return None
+        try:
+            result = subprocess.run(
+                ["git", "log", "-1", "--format=%H", "--", str(rule.source.path)],
+                capture_output=True,
+                text=True,
+                cwd=str(rule.source.path.parent),
+                timeout=5,
+            )
+            if result.returncode == 0 and result.stdout.strip():
+                return result.stdout.strip()
+        except (subprocess.TimeoutExpired, FileNotFoundError, OSError):
+            pass
+        return None
 
     def _get_used_fields(self, rule: SigmaRule) -> set:
         """
