@@ -664,3 +664,67 @@ def test_sumologic_rule_source_empty_falls_back_to_default(rule_source):
 
     json_result = json.loads(result[0])["rules"][0]
     assert json_result["rule_source"] == "user"
+
+
+@pytest.mark.parametrize("status", ["stable", "test", "experimental", "deprecated", "unsupported"])
+def test_conversion_metadata_sigma_status(status):
+    """sigma_status in conversion_metadata reflects the rule's status field."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        include_conversion_metadata=True,
+    )
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            f"""
+            title: Test Conversion Metadata
+            id: 00000000-0000-0000-0000-000000000099
+            status: {status}
+            description: Test rule for conversion metadata
+            author: Test Author
+            level: medium
+            logsource:
+                category: process_creation
+                product: windows
+            detection:
+                sel:
+                    CommandLine: "test.exe"
+                condition: sel
+        """
+        )
+    )
+
+    rule_json = json.loads(result[0])["rules"][0]
+    assert "conversion_metadata" in rule_json
+    assert rule_json["conversion_metadata"]["sigma_status"] == status
+
+
+def test_conversion_metadata_sigma_status_absent_when_disabled():
+    """conversion_metadata is not present when include_conversion_metadata=False."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        include_conversion_metadata=False,
+    )
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            """
+            title: Test Conversion Metadata
+            id: 00000000-0000-0000-0000-000000000099
+            status: stable
+            description: Test rule for conversion metadata
+            author: Test Author
+            level: medium
+            logsource:
+                category: process_creation
+                product: windows
+            detection:
+                sel:
+                    CommandLine: "test.exe"
+                condition: sel
+        """
+        )
+    )
+
+    rule_json = json.loads(result[0])["rules"][0]
+    assert "conversion_metadata" not in rule_json
