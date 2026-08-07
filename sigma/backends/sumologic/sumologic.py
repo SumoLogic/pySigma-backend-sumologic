@@ -931,6 +931,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
                 "sigma_uid": str(rule.id) if rule.id else None,
                 "conversion_timestamp": datetime.now(timezone.utc).isoformat(),
                 "sigma_rule_commit": self._get_rule_commit(rule),
+                "sigma_status": str(rule.status),
             }
 
             if self.include_full_sigma_rule:
