@@ -15,9 +15,7 @@ def sumologic_backend():
 
 def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
     """Test AND expression generates correct CSE query"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test AND Expression
             id: 00000000-0000-0000-0000-000000000001
             status: test
@@ -32,9 +30,7 @@ def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
                     CommandLine: "test.exe"
                     Image: "C:\\\\Windows\\\\System32\\\\test.exe"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     # Parse JSON result (now wrapped in {"rules": [...]})
     parsed_result = json.loads(result[0])
@@ -69,9 +65,7 @@ def test_sumologic_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
     """Test OR expression generates correct CSE query"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test OR Expression
             id: 00000000-0000-0000-0000-000000000002
             status: test
@@ -87,9 +81,7 @@ def test_sumologic_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
                 sel2:
                     CommandLine: "sekurlsa"
                 condition: 1 of sel*
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -102,9 +94,7 @@ def test_sumologic_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend):
     """Test combined AND/OR expression"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test AND/OR Expression
             id: 00000000-0000-0000-0000-000000000003
             status: test
@@ -123,9 +113,7 @@ def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend)
                         - "valueB1"
                         - "valueB2"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -138,9 +126,7 @@ def test_sumologic_and_or_expression(sumologic_backend: SumoLogicCSERuleBackend)
 
 def test_sumologic_or_and_expression(sumologic_backend: SumoLogicCSERuleBackend):
     """Test OR of AND expressions"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test OR of AND
             id: 00000000-0000-0000-0000-000000000004
             status: test
@@ -158,9 +144,7 @@ def test_sumologic_or_and_expression(sumologic_backend: SumoLogicCSERuleBackend)
                     CommandLine: "valueA2"
                     Image: "valueB2"
                 condition: 1 of sel*
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -171,9 +155,7 @@ def test_sumologic_or_and_expression(sumologic_backend: SumoLogicCSERuleBackend)
 
 def test_sumologic_in_expression(sumologic_backend: SumoLogicCSERuleBackend):
     """Test IN expression with multiple values"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test IN Expression
             id: 00000000-0000-0000-0000-000000000005
             status: test
@@ -189,9 +171,7 @@ def test_sumologic_in_expression(sumologic_backend: SumoLogicCSERuleBackend):
                         - "powershell.exe"
                         - "pwsh.exe"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -203,9 +183,7 @@ def test_sumologic_in_expression(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_regex_query(sumologic_backend: SumoLogicCSERuleBackend):
     """Test regex pattern matching"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test Regex
             id: 00000000-0000-0000-0000-000000000006
             status: test
@@ -219,9 +197,7 @@ def test_sumologic_regex_query(sumologic_backend: SumoLogicCSERuleBackend):
                     CommandLine|re: "foo.*bar"
                     Image: "test.exe"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -233,9 +209,7 @@ def test_sumologic_regex_query(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_wildcard_query(sumologic_backend: SumoLogicCSERuleBackend):
     """Test wildcard matching"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test Wildcard
             id: 00000000-0000-0000-0000-000000000007
             status: test
@@ -248,9 +222,7 @@ def test_sumologic_wildcard_query(sumologic_backend: SumoLogicCSERuleBackend):
                 sel:
                     CommandLine: "*mimikatz*"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -262,9 +234,7 @@ def test_sumologic_wildcard_query(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_json_structure(sumologic_backend: SumoLogicCSERuleBackend):
     """Test that output JSON has all required CSE fields"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Complete Test Rule
             id: 00000000-0000-0000-0000-000000000008
             status: test
@@ -284,9 +254,7 @@ def test_sumologic_json_structure(sumologic_backend: SumoLogicCSERuleBackend):
                     Image: "powershell.exe"
                     CommandLine: "-encodedcommand"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     assert "rules" in parsed_result
@@ -328,9 +296,7 @@ def test_sumologic_json_structure(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_mitre_attack_mapping(sumologic_backend: SumoLogicCSERuleBackend):
     """Test MITRE ATT&CK technique and tactic extraction"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: MITRE Test
             id: 00000000-0000-0000-0000-000000000009
             status: test
@@ -348,9 +314,7 @@ def test_sumologic_mitre_attack_mapping(sumologic_backend: SumoLogicCSERuleBacke
                 sel:
                     Image: "lsass.exe"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -377,9 +341,7 @@ def test_sumologic_severity_mapping(sumologic_backend: SumoLogicCSERuleBackend):
     ]
 
     for severity, expected_score in test_cases:
-        result = sumologic_backend.convert(
-            SigmaCollection.from_yaml(
-                f"""
+        result = sumologic_backend.convert(SigmaCollection.from_yaml(f"""
                 title: Severity Test {severity}
                 id: 00000000-0000-0000-0000-00000000000a
                 status: test
@@ -393,9 +355,7 @@ def test_sumologic_severity_mapping(sumologic_backend: SumoLogicCSERuleBackend):
                     sel:
                         Image: "test.exe"
                     condition: sel
-            """
-            )
-        )
+            """))
 
         parsed_result = json.loads(result[0])
         json_result = parsed_result["rules"][0]
@@ -406,9 +366,7 @@ def test_sumologic_severity_mapping(sumologic_backend: SumoLogicCSERuleBackend):
 
 def test_sumologic_field_mapping_sysmon(sumologic_backend: SumoLogicCSERuleBackend):
     """Test field mapping for Sysmon process creation"""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Field Mapping Test
             id: 00000000-0000-0000-0000-00000000000b
             status: test
@@ -425,9 +383,7 @@ def test_sumologic_field_mapping_sysmon(sumologic_backend: SumoLogicCSERuleBacke
                     User: "SYSTEM"
                     md5: "abc123"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     json_result = parsed_result["rules"][0]
@@ -496,9 +452,7 @@ def test_sumologic_schema_aware_numeric_quoting(
     sumologic_backend: SumoLogicCSERuleBackend,
 ):
     """Test that numeric values are quoted when CSE field is string type."""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test Schema-Aware Quoting
             id: 00000000-0000-0000-0000-000000000099
             status: test
@@ -510,9 +464,7 @@ def test_sumologic_schema_aware_numeric_quoting(
                     EventID: 4624
                     LogonType: 3
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     expression = parsed_result["rules"][0]["expression"]
@@ -525,9 +477,7 @@ def test_sumologic_schema_aware_numeric_list(
     sumologic_backend: SumoLogicCSERuleBackend,
 ):
     """Test that numeric values in lists are quoted when CSE field is string type."""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test Schema-Aware List Quoting
             id: 00000000-0000-0000-0000-000000000098
             status: test
@@ -541,9 +491,7 @@ def test_sumologic_schema_aware_numeric_list(
                         - 3
                         - 10
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     expression = parsed_result["rules"][0]["expression"]
@@ -554,9 +502,7 @@ def test_sumologic_schema_aware_numeric_list(
 
 def test_sumologic_numeric_fields_unquoted(sumologic_backend: SumoLogicCSERuleBackend):
     """Test that truly numeric fields remain unquoted."""
-    result = sumologic_backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = sumologic_backend.convert(SigmaCollection.from_yaml("""
             title: Test Numeric Fields
             id: 00000000-0000-0000-0000-000000000097
             status: test
@@ -567,9 +513,7 @@ def test_sumologic_numeric_fields_unquoted(sumologic_backend: SumoLogicCSERuleBa
                 sel:
                     ProcessId: 1234
                 condition: sel
-        """
-        )
-    )
+        """))
 
     parsed_result = json.loads(result[0])
     expression = parsed_result["rules"][0]["expression"]
@@ -585,9 +529,7 @@ def test_sumologic_keywords_error(sumologic_backend: SumoLogicCSERuleBackend):
 
     # Keywords are not supported - should get helpful error
     with pytest.raises(SigmaFeatureNotSupportedByBackendError) as exc_info:
-        sumologic_backend.convert(
-            SigmaCollection.from_yaml(
-                """
+        sumologic_backend.convert(SigmaCollection.from_yaml("""
                 title: Keywords Test
                 id: 00000000-0000-0000-0001-000000000001
                 status: test
@@ -599,9 +541,7 @@ def test_sumologic_keywords_error(sumologic_backend: SumoLogicCSERuleBackend):
                         - 'mimikatz'
                         - 'Invoke-Mimikatz'
                     condition: keywords
-            """
-            )
-        )
+            """))
 
     error_msg = str(exc_info.value)
     # Should show original Sigma detection
@@ -666,7 +606,9 @@ def test_sumologic_rule_source_empty_falls_back_to_default(rule_source):
     assert json_result["rule_source"] == "user"
 
 
-@pytest.mark.parametrize("status", ["stable", "test", "experimental", "deprecated", "unsupported"])
+@pytest.mark.parametrize(
+    "status", ["stable", "test", "experimental", "deprecated", "unsupported"]
+)
 def test_conversion_metadata_sigma_status(status):
     """sigma_status in conversion_metadata reflects the rule's status field."""
     backend = SumoLogicCSERuleBackend(
@@ -674,9 +616,7 @@ def test_conversion_metadata_sigma_status(status):
         min_confidence=0.0,
         include_conversion_metadata=True,
     )
-    result = backend.convert(
-        SigmaCollection.from_yaml(
-            f"""
+    result = backend.convert(SigmaCollection.from_yaml(f"""
             title: Test Conversion Metadata
             id: 00000000-0000-0000-0000-000000000099
             status: {status}
@@ -690,9 +630,7 @@ def test_conversion_metadata_sigma_status(status):
                 sel:
                     CommandLine: "test.exe"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     rule_json = json.loads(result[0])["rules"][0]
     assert "conversion_metadata" in rule_json
@@ -706,9 +644,7 @@ def test_conversion_metadata_sigma_status_absent_when_disabled():
         min_confidence=0.0,
         include_conversion_metadata=False,
     )
-    result = backend.convert(
-        SigmaCollection.from_yaml(
-            """
+    result = backend.convert(SigmaCollection.from_yaml("""
             title: Test Conversion Metadata
             id: 00000000-0000-0000-0000-000000000099
             status: stable
@@ -722,9 +658,7 @@ def test_conversion_metadata_sigma_status_absent_when_disabled():
                 sel:
                     CommandLine: "test.exe"
                 condition: sel
-        """
-        )
-    )
+        """))
 
     rule_json = json.loads(result[0])["rules"][0]
     assert "conversion_metadata" not in rule_json
