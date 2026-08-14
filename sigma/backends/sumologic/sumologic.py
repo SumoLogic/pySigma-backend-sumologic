@@ -144,6 +144,7 @@ class SumoLogicCSEBackend(TextQueryBackend):
         fail_on_unmapped_logsource: bool = False,
         include_full_sigma_rule: bool = False,
         include_conversion_metadata: bool = True,
+        include_conversion_timestamp: bool = True,
         rule_source: Optional[str] = None,
         **kwargs,
     ):
@@ -155,6 +156,9 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.fail_on_unmapped_logsource = fail_on_unmapped_logsource
         self.include_full_sigma_rule = self._parse_bool(include_full_sigma_rule)
         self.include_conversion_metadata = self._parse_bool(include_conversion_metadata)
+        self.include_conversion_timestamp = self._parse_bool(
+            include_conversion_timestamp
+        )
         self.rule_source = str(rule_source) if rule_source else self.DEFAULT_RULE_SOURCE
 
         # Load CSE schema for field type checking
@@ -929,10 +933,14 @@ class SumoLogicCSEBackend(TextQueryBackend):
         if self.include_conversion_metadata:
             conversion_metadata_obj: Dict[str, Any] = {
                 "sigma_uid": str(rule.id) if rule.id else None,
-                "conversion_timestamp": datetime.now(timezone.utc).isoformat(),
                 "sigma_rule_commit": self._get_rule_commit(rule),
                 "sigma_status": str(rule.status),
             }
+
+            if self.include_conversion_timestamp:
+                conversion_metadata_obj["conversion_timestamp"] = datetime.now(
+                    timezone.utc
+                ).isoformat()
 
             if self.include_full_sigma_rule:
                 conversion_metadata_obj["full_sigma_rule"] = getattr(

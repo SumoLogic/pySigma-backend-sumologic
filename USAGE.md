@@ -59,6 +59,11 @@ Set the `rule_source` field on converted rules (defaults to `user`):
 sigma convert -t sumologic_cse_rule -p sumologic_cse -O rule_source=sigma rule.yml
 ```
 
+Omit the conversion timestamp from rule metadata (useful for reproducible/diffable output):
+```bash
+sigma convert -t sumologic_cse_rule -p sumologic_cse -O include_conversion_timestamp=false rule.yml
+```
+
 ## Using Programmatically
 
 ### Basic Usage
