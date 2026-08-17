@@ -1,5 +1,6 @@
 import pytest
 import json
+import re
 from sigma.backends.sumologic import SumoLogicCSERuleBackend
 from sigma.pipelines.sumologic import sumologic_cse_pipeline
 from sigma.collection import SigmaCollection
@@ -730,3 +731,69 @@ def test_conversion_metadata_sigma_status_absent_when_disabled():
 
     rule_json = json.loads(result[0])["rules"][0]
     assert "conversion_metadata" not in rule_json
+
+
+def _convert_rule_with_dates(date_fields: str) -> dict:
+    """Convert a minimal rule with the given date/modified YAML lines."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+    )
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            f"""
+            title: Test Rule Dates
+            id: 00000000-0000-0000-0000-000000000098
+            status: stable
+            description: Test rule for created/modified dates
+            author: Test Author
+            level: medium
+{date_fields}
+            logsource:
+                category: process_creation
+                product: windows
+            detection:
+                sel:
+                    CommandLine: "test.exe"
+                condition: sel
+        """
+        )
+    )
+    return json.loads(result[0])["rules"][0]
+
+
+def test_rule_dates_from_date_and_modified():
+    """created/last_updated come from the Sigma date and modified fields."""
+    rule_json = _convert_rule_with_dates(
+        "            date: 2023/01/15\n            modified: 2024-05-02"
+    )
+
+    assert rule_json["created"] == "2023-01-15T00:00:00.000000"
+    assert rule_json["last_updated"] == "2024-05-02T00:00:00.000000"
+
+
+def test_rule_dates_last_updated_falls_back_to_date():
+    """When only date is present, last_updated is populated from date."""
+    rule_json = _convert_rule_with_dates("            date: 2023/01/15")
+
+    assert rule_json["created"] == "2023-01-15T00:00:00.000000"
+    assert rule_json["last_updated"] == "2023-01-15T00:00:00.000000"
+
+
+def test_rule_dates_absent_when_no_date():
+    """created/last_updated are omitted when the rule has no date field."""
+    rule_json = _convert_rule_with_dates("")
+
+    assert "created" not in rule_json
+    assert "last_updated" not in rule_json
+
+
+def test_rule_dates_use_csiem_timestamp_format():
+    """Dates match the CSIEM export format: ISO 8601 with microseconds, no offset."""
+    rule_json = _convert_rule_with_dates(
+        "            date: 2023/01/15\n            modified: 2024-05-02"
+    )
+
+    pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$"
+    assert re.fullmatch(pattern, rule_json["created"])
+    assert re.fullmatch(pattern, rule_json["last_updated"])

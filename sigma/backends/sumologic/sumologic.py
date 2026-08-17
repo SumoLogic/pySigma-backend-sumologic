@@ -12,7 +12,7 @@ import re
 import json
 import subprocess
 import yaml
-from datetime import datetime, timezone
+from datetime import date, datetime, timezone
 from typing import ClassVar, Dict, Tuple, Pattern, List, Any, Optional
 
 
@@ -899,6 +899,13 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Add category (derived from MITRE tactic tags)
         rule_json["category"] = category
 
+        # Add created/last_updated from the Sigma rule's date/modified fields
+        created, last_updated = self._map_rule_dates(rule)
+        if created:
+            rule_json["created"] = created
+        if last_updated:
+            rule_json["last_updated"] = last_updated
+
         # Confidence checks (always enforced regardless of metadata output)
         if self.include_confidence_metadata:
             confidence_metadata = self._collect_confidence_metadata(rule)
@@ -1402,6 +1409,54 @@ class SumoLogicCSEBackend(TextQueryBackend):
         }
 
         return status_mapping.get(status_str, (True, False))
+
+    def _map_rule_dates(self, rule: SigmaRule) -> Tuple[Optional[str], Optional[str]]:
+        """
+        Map the Sigma rule's date/modified fields to CSIEM created/last_updated.
+
+        Mapping:
+        - date + modified: created=date, last_updated=modified
+        - date only: created=date, last_updated=date
+        - neither: both None (keys are omitted from the rule JSON)
+
+        Args:
+            rule: Sigma rule object
+
+        Returns:
+            Tuple of (created, last_updated) as CSIEM timestamp strings, or None
+            when absent
+        """
+        created = self._format_date(getattr(rule, "date", None))
+        last_updated = self._format_date(getattr(rule, "modified", None))
+
+        # Sigma rules carry `modified` only alongside `date`; fall back to the
+        # creation date so both fields are always populated together.
+        if created and not last_updated:
+            last_updated = created
+
+        return created, last_updated
+
+    # CSIEM timestamp format, e.g. 2023-05-12T18:42:01.391000 (no timezone offset)
+    CSIEM_TIMESTAMP_FORMAT: ClassVar[str] = "%Y-%m-%dT%H:%M:%S.%f"
+
+    @classmethod
+    def _format_date(cls, value: Any) -> Optional[str]:
+        """
+        Format a Sigma date as a CSIEM timestamp string.
+
+        Sigma only carries date precision (no time), so the time component is
+        rendered as midnight. datetime.isoformat() is not used because it omits
+        the microseconds CSIEM always includes when they are zero.
+        """
+        if value is None:
+            return None
+        if isinstance(value, datetime):
+            return value.strftime(cls.CSIEM_TIMESTAMP_FORMAT)
+        if isinstance(value, date):
+            return datetime(value.year, value.month, value.day).strftime(
+                cls.CSIEM_TIMESTAMP_FORMAT
+            )
+        return str(value)
 
     def _build_description(self, rule: SigmaRule, techniques: List[str]) -> str:
         """

@@ -182,6 +182,8 @@ Complete CSE rule with metadata:
       "summary_expression": "",
       "tags": ["_mitreAttackTactic:TA0002"],
       "category": "Execution",
+      "created": "2023-01-15T00:00:00.000000",
+      "last_updated": "2024-05-02T00:00:00.000000",
       "pattern_type": "templated_match",
       "stream": "record",
       "score_mapping": {
