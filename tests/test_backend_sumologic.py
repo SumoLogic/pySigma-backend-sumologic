@@ -762,6 +762,69 @@ def _convert_rule_with_dates(date_fields: str) -> dict:
     return json.loads(result[0])["rules"][0]
 
 
+def test_conversion_timestamp_present_by_default():
+    """conversion_timestamp is present in conversion_metadata by default."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+    )
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            """
+            title: Test Conversion Timestamp
+            id: 00000000-0000-0000-0000-000000000100
+            status: stable
+            description: Test rule for conversion timestamp
+            author: Test Author
+            level: medium
+            logsource:
+                category: process_creation
+                product: windows
+            detection:
+                sel:
+                    CommandLine: "test.exe"
+                condition: sel
+        """
+        )
+    )
+
+    rule_json = json.loads(result[0])["rules"][0]
+    assert "conversion_metadata" in rule_json
+    assert "conversion_timestamp" in rule_json["conversion_metadata"]
+
+
+def test_conversion_timestamp_absent_when_disabled():
+    """conversion_timestamp is absent from conversion_metadata when include_conversion_timestamp=False."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        include_conversion_timestamp=False,
+    )
+    result = backend.convert(
+        SigmaCollection.from_yaml(
+            """
+            title: Test Conversion Timestamp Disabled
+            id: 00000000-0000-0000-0000-000000000101
+            status: stable
+            description: Test rule for conversion timestamp disabled
+            author: Test Author
+            level: medium
+            logsource:
+                category: process_creation
+                product: windows
+            detection:
+                sel:
+                    CommandLine: "test.exe"
+                condition: sel
+        """
+        )
+    )
+
+    rule_json = json.loads(result[0])["rules"][0]
+    assert "conversion_metadata" in rule_json
+    assert "conversion_timestamp" not in rule_json["conversion_metadata"]
+
+
 def test_rule_dates_from_date_and_modified():
     """created/last_updated come from the Sigma date and modified fields."""
     rule_json = _convert_rule_with_dates(
