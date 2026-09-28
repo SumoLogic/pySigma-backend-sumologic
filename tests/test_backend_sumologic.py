@@ -1,7 +1,7 @@
 import pytest
 import json
 import re
-from sigma.backends.sumologic import SumoLogicCSERuleBackend
+from sigma.backends.sumologic import SumoLogicCSEBackend, SumoLogicCSERuleBackend
 from sigma.pipelines.sumologic import sumologic_cse_pipeline
 from sigma.collection import SigmaCollection
 
@@ -860,3 +860,38 @@ def test_rule_dates_use_csiem_timestamp_format():
     pattern = r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}\.\d{6}$"
     assert re.fullmatch(pattern, rule_json["created"])
     assert re.fullmatch(pattern, rule_json["last_updated"])
+
+
+@pytest.mark.parametrize(
+    "backend_class", [SumoLogicCSEBackend, SumoLogicCSERuleBackend]
+)
+def test_sumologic_cse_rule_format_matches_default(backend_class):
+    """The cse_rule format is advertised by both backends and must produce the default output"""
+    backend = backend_class(
+        processing_pipeline=sumologic_cse_pipeline(), min_confidence=0.0
+    )
+    rule = SigmaCollection.from_yaml(
+        """
+        title: Test cse_rule format
+        id: 00000000-0000-0000-0000-000000000099
+        status: test
+        description: Test rule for the cse_rule output format
+        author: Test Author
+        date: 2026-01-01
+        level: medium
+        logsource:
+            category: process_creation
+            product: windows
+        detection:
+            sel:
+                Image|endswith: '\whoami.exe'
+                CommandLine|contains: ' /all'
+            condition: sel
+    """
+    )
+
+    default = json.loads(backend.convert(rule)[0])["rules"][0]
+    cse_rule = json.loads(backend.convert(rule, "cse_rule")[0])["rules"][0]
+
+    assert cse_rule["expression"] == default["expression"]
+    assert '"' not in cse_rule["expression"]
