@@ -152,8 +152,8 @@ class SumoLogicCSEBackend(TextQueryBackend):
         self.rule_metadata: List[Dict[str, Any]] = []
         self.min_confidence = float(min_confidence)
         self.schema_path = schema_path
-        self.include_confidence_metadata = include_confidence_metadata
-        self.fail_on_unmapped_logsource = fail_on_unmapped_logsource
+        self.include_confidence_metadata = self._parse_bool(include_confidence_metadata)
+        self.fail_on_unmapped_logsource = self._parse_bool(fail_on_unmapped_logsource)
         self.include_full_sigma_rule = self._parse_bool(include_full_sigma_rule)
         self.include_conversion_metadata = self._parse_bool(include_conversion_metadata)
         self.include_conversion_timestamp = self._parse_bool(
