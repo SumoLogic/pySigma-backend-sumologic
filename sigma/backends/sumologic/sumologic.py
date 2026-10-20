@@ -822,6 +822,20 @@ class SumoLogicCSEBackend(TextQueryBackend):
         # Wrap in rules structure and return as list
         return [json.dumps({"rules": rule_objects}, indent=4, sort_keys=False)]
 
+    def finalize_query_cse_rule(
+        self, rule: SigmaRule, query: str, index: int, state: ConversionState
+    ) -> str:
+        """
+        Finalize query as CSIEM Rule JSON for cse_rule format (same output as default).
+        """
+        return self.finalize_query_default(rule, query, index, state)
+
+    def finalize_output_cse_rule(self, queries: List[Any]) -> Any:
+        """
+        Output collected rules as JSON with rules wrapper (same output as default).
+        """
+        return self.finalize_output_default(queries)
+
     def finalize(self, queries: List[Any], output_format: str) -> Any:
         """
         Finalize output in the specified format.
@@ -1670,23 +1684,3 @@ class SumoLogicCSERuleBackend(SumoLogicCSEBackend):
 
     name: ClassVar[str] = "Sumo Logic Cloud SIEM Rule JSON Backend"
     identifier: ClassVar[str] = "sumologic_cse_rule"
-
-    def finalize_query_cse_rule(
-        self, rule: SigmaRule, query: str, index: int, state: ConversionState
-    ) -> str:
-        """
-        Finalize query as CSIEM Rule JSON for cse_rule format.
-        """
-        rule_json = self.create_rule_json(rule, query)
-        self.rule_metadata.append(rule_json)
-        return json.dumps(rule_json, indent=4, sort_keys=False)
-
-    def finalize_output_cse_rule(self, queries: List[Any]) -> Any:
-        """
-        Output collected rules as JSON with rules wrapper.
-        """
-        # Parse JSON strings back to objects
-        rule_objects = [json.loads(q) for q in queries]
-
-        # Wrap in rules structure and return as list
-        return [json.dumps({"rules": rule_objects}, indent=4, sort_keys=False)]
