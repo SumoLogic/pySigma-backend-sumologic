@@ -884,7 +884,7 @@ def test_sumologic_cse_rule_format_matches_default(backend_class):
             product: windows
         detection:
             sel:
-                Image|endswith: '\whoami.exe'
+                Image|endswith: '\\whoami.exe'
                 CommandLine|contains: ' /all'
             condition: sel
     """
@@ -895,3 +895,58 @@ def test_sumologic_cse_rule_format_matches_default(backend_class):
 
     assert cse_rule["expression"] == default["expression"]
     assert '"' not in cse_rule["expression"]
+
+
+UNMAPPED_LOGSOURCE_TEST_RULE = """
+title: Test Unmapped Logsource
+id: 00000000-0000-0000-0000-000000000201
+status: test
+description: Test rule with a logsource that has no vendor/product mapping
+author: Test Author
+level: medium
+logsource:
+    category: process_creation
+detection:
+    sel:
+        CommandLine: "test.exe"
+    condition: sel
+"""
+
+
+@pytest.mark.parametrize("value", [False, "false", "False", "0", "no"])
+def test_include_confidence_metadata_false_values(value):
+    """String values from sigma-cli -O options disable confidence metadata."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        include_confidence_metadata=value,
+    )
+    result = backend.convert(SigmaCollection.from_yaml(RULE_SOURCE_TEST_RULE))
+
+    rule_json = json.loads(result[0])["rules"][0]
+    assert "mapping_confidence" not in rule_json.get("conversion_metadata", {})
+
+
+@pytest.mark.parametrize("value", [False, "false", "False", "0", "no"])
+def test_fail_on_unmapped_logsource_false_values(value):
+    """String values from sigma-cli -O options allow unmapped logsources."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        fail_on_unmapped_logsource=value,
+    )
+    result = backend.convert(SigmaCollection.from_yaml(UNMAPPED_LOGSOURCE_TEST_RULE))
+
+    assert len(json.loads(result[0])["rules"]) == 1
+
+
+@pytest.mark.parametrize("value", [True, "true", "True", "1", "yes"])
+def test_fail_on_unmapped_logsource_true_values(value):
+    """String true values from sigma-cli -O options block unmapped logsources."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        fail_on_unmapped_logsource=value,
+    )
+    with pytest.raises(Exception, match="No vendor/product mapping"):
+        backend.convert(SigmaCollection.from_yaml(UNMAPPED_LOGSOURCE_TEST_RULE))
