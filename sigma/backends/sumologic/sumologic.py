@@ -925,30 +925,26 @@ class SumoLogicCSEBackend(TextQueryBackend):
             rule_json["last_updated"] = last_updated
 
         # Confidence checks (always enforced regardless of metadata output)
-        if self.include_confidence_metadata:
-            confidence_metadata = self._collect_confidence_metadata(rule)
+        confidence_metadata = self._collect_confidence_metadata(rule)
 
-            if (
-                confidence_metadata["overall_score"]
-                < confidence_metadata["threshold_used"]
-            ):
-                from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+        if confidence_metadata["overall_score"] < confidence_metadata["threshold_used"]:
+            from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
 
-                error_msg = self._build_confidence_error_message(confidence_metadata)
-                raise SigmaFeatureNotSupportedByBackendError(error_msg)
+            error_msg = self._build_confidence_error_message(confidence_metadata)
+            raise SigmaFeatureNotSupportedByBackendError(error_msg)
 
-            if self.fail_on_unmapped_logsource and not confidence_metadata.get(
-                "has_vendor_mapping", True
-            ):
-                from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
+        if self.fail_on_unmapped_logsource and not confidence_metadata.get(
+            "has_vendor_mapping", True
+        ):
+            from sigma.exceptions import SigmaFeatureNotSupportedByBackendError
 
-                unmapped = confidence_metadata.get("unmapped_logsource", {})
-                raise SigmaFeatureNotSupportedByBackendError(
-                    f"Conversion blocked: No vendor/product mapping found for logsource "
-                    f"(product={unmapped.get('product')}, service={unmapped.get('service')}, "
-                    f"category={unmapped.get('category')}). "
-                    f"Use -O fail_on_unmapped_logsource=false to allow conversion without metadata filters."
-                )
+            unmapped = confidence_metadata.get("unmapped_logsource", {})
+            raise SigmaFeatureNotSupportedByBackendError(
+                f"Conversion blocked: No vendor/product mapping found for logsource "
+                f"(product={unmapped.get('product')}, service={unmapped.get('service')}, "
+                f"category={unmapped.get('category')}). "
+                f"Use -O fail_on_unmapped_logsource=false to allow conversion without metadata filters."
+            )
 
         # Build conversion_metadata object (optional output)
         if self.include_conversion_metadata:
