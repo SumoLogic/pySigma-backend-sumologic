@@ -950,3 +950,43 @@ def test_fail_on_unmapped_logsource_true_values(value):
     )
     with pytest.raises(Exception, match="No vendor/product mapping"):
         backend.convert(SigmaCollection.from_yaml(UNMAPPED_LOGSOURCE_TEST_RULE))
+
+
+UNMAPPED_FIELD_TEST_RULE = """
+title: Test Unmapped Field
+id: 00000000-0000-0000-0000-000000000202
+status: test
+description: Test rule with a field that has no CSE mapping
+author: Test Author
+level: medium
+logsource:
+    category: process_creation
+detection:
+    sel:
+        WeirdUnknownField: "x"
+    condition: sel
+"""
+
+
+@pytest.mark.parametrize("value", [False, "false"])
+def test_min_confidence_enforced_without_confidence_metadata(value):
+    """Disabling confidence metadata output does not skip the confidence threshold."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        include_confidence_metadata=value,
+    )
+    with pytest.raises(Exception, match="Confidence"):
+        backend.convert(SigmaCollection.from_yaml(UNMAPPED_FIELD_TEST_RULE))
+
+
+@pytest.mark.parametrize("value", [False, "false"])
+def test_fail_on_unmapped_logsource_enforced_without_confidence_metadata(value):
+    """Disabling confidence metadata output does not skip the unmapped logsource check."""
+    backend = SumoLogicCSERuleBackend(
+        processing_pipeline=sumologic_cse_pipeline(),
+        min_confidence=0.0,
+        include_confidence_metadata=value,
+        fail_on_unmapped_logsource=True,
+    )
+    with pytest.raises(Exception, match="No vendor/product mapping"):
+        backend.convert(SigmaCollection.from_yaml(UNMAPPED_LOGSOURCE_TEST_RULE))
