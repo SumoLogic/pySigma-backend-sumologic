@@ -74,7 +74,10 @@ Produces complete CSE rule JSON ready for the Rules API:
       "category": "Execution",
       "enabled": true,
       "is_prototype": true,
-      "mapping_confidence": {"overall_score": 0.691, "...": "..."}
+      "conversion_metadata": {
+        "sigma_status": "experimental",
+        "mapping_confidence": {"overall_score": 0.691, "...": "..."}
+      }
     }
   ]
 }
@@ -160,8 +163,13 @@ Pass via `-O key=value` with sigma-cli or as constructor kwargs in Python:
 | Option | Default | Description |
 |--------|---------|-------------|
 | `min_confidence` | `0.25` | Minimum confidence score to allow conversion (0.0 disables threshold) |
-| `include_confidence_metadata` | `true` | Include `mapping_confidence` object in output |
+| `rule_source` | `user` | Value of the `rule_source` field on converted rules |
+| `include_conversion_metadata` | `true` | Include the `conversion_metadata` object in output |
+| `include_confidence_metadata` | `true` | Include `mapping_confidence` in `conversion_metadata` |
+| `include_conversion_timestamp` | `true` | Include `conversion_timestamp` in `conversion_metadata` (disable for reproducible output) |
+| `include_full_sigma_rule` | `false` | Include the source Sigma rule YAML as `full_sigma_rule` in `conversion_metadata` |
 | `fail_on_unmapped_logsource` | `false` | Error if rule's log source has no vendor/product mapping |
+| `schema_path` | bundled | Path to a custom CSE schema file |
 
 ## Limitations
 
